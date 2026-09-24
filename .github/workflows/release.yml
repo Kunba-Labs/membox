@@ -84,3 +84,14 @@ jobs:
           releaseCommitish: ${{ github.sha }}
           releaseDraft: false
           includeUpdaterJson: true
+
+      # Tauri notarizes the .app inside but not the .dmg around it, and a
+      # downloaded, unnotarized disk image is what Gatekeeper checks first.
+      - name: Notarize the dmg
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DMG=$(ls target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          xcrun notarytool submit "$DMG" --key "$APPLE_API_KEY_PATH" --key-id "${{ secrets.APPLE_API_KEY }}" --issuer "${{ secrets.APPLE_API_ISSUER }}" --wait
+          xcrun stapler staple "$DMG"
+          gh release upload "v$V" "$DMG" --clobber
