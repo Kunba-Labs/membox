@@ -1,11 +1,23 @@
-# Push a tag like v0.2.0 → a draft GitHub release with a universal macOS .dmg.
-# Signed + notarized when the APPLE_* secrets are set; ad-hoc signed otherwise.
+# Every push to main is a release: tag v<bin/version>, build a universal macOS
+# app, sign + notarize it, and publish it with latest.json — which is what every
+# running copy's updater polls (tauri.release.conf.json, updater.rs).
+#
+# Secrets (repo Settings → Secrets → Actions; bin/release-secrets sets them all):
+#   TAURI_SIGNING_PRIVATE_KEY[_PASSWORD]  ~/.membox-updater-key — losing it strands every install
+#   APPLE_CERTIFICATE[_PASSWORD]          Developer ID .p12, base64
+#   APPLE_SIGNING_IDENTITY                "Developer ID Application: … (KF53B4S5HD)"
+#   APPLE_API_KEY / APPLE_API_ISSUER / APPLE_API_KEY_P8   App Store Connect key, for notarizing
 name: release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
   workflow_dispatch:
+
+# One release at a time; a push that lands mid-build waits, then ships on top.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -15,6 +27,28 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # bin/version counts commits
+
+      - name: Version
+        run: |
+          V=$(bin/version)
+          echo "V=$V" >> "$GITHUB_ENV"
+          jq --arg v "$V" '.version = $v' desktop/src-tauri/tauri.conf.json > t.json && mv t.json desktop/src-tauri/tauri.conf.json
+
+      # An unsigned build would still auto-install on every Mac, and a new ad-hoc
+      # signature resets its permissions and keychain access. Refuse instead.
+      - name: Secrets present
+        env:
+          A: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          B: ${{ secrets.APPLE_CERTIFICATE }}
+          C: ${{ secrets.APPLE_API_KEY_P8 }}
+        run: '[ -n "$A" ] && [ -n "$B" ] && [ -n "$C" ] || { echo "::error::release secrets missing — run bin/release-secrets"; exit 1; }'
+
+      - name: App Store Connect key
+        run: |
+          echo "${{ secrets.APPLE_API_KEY_P8 }}" > "$RUNNER_TEMP/AuthKey.p8"
+          echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
 
       - uses: actions/setup-node@v4
         with:
@@ -31,38 +65,22 @@ jobs:
       - run: yarn install --frozen-lockfile
         working-directory: desktop
 
-      # Only export the signing env when a certificate exists — an empty
-      # APPLE_CERTIFICATE makes the Tauri CLI try to import nothing and fail.
-      - name: Signing
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          if [ -n "$APPLE_CERTIFICATE" ]; then
-            for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
-              echo "$v<<__EOF__" >> "$GITHUB_ENV"; printenv "$v" >> "$GITHUB_ENV"; echo "__EOF__" >> "$GITHUB_ENV"
-            done
-          else
-            echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
-          fi
-
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         with:
           projectPath: desktop
-          args: --target universal-apple-darwin
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-          releaseName: membox ${{ github.ref_name }}
-          releaseDraft: true
-
-      # A manual run (no tag) makes no release — keep the .dmg as a run artifact.
-      - uses: actions/upload-artifact@v4
-        if: github.ref_type != 'tag'
-        with:
-          name: membox-macos
-          path: target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          args: --target universal-apple-darwin -c src-tauri/tauri.release.conf.json
+          tagName: v${{ env.V }}
+          releaseName: membox ${{ env.V }}
+          releaseBody: ${{ github.event.head_commit.message }}
+          releaseCommitish: ${{ github.sha }}
+          releaseDraft: false
+          includeUpdaterJson: true

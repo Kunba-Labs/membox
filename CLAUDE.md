@@ -34,7 +34,18 @@ ios/deploy-device.sh [--xcframework] # signed build → paired iPhone over the a
 bin/backup [--dev]                    # snapshot library → membox-backups/<id>/<stamp>/, keep 10
 bin/restore [--dev] [dir]            # put one back (app must be quit; old library kept aside)
 bin/icons · bin/mock-thumbs
+bin/version                          # 0.1.<commit count> — what every release is tagged
+bin/release-secrets                  # once: push signing/notarizing secrets to GitHub (gh auth)
 ```
+
+**Releases are automatic.** Every push to main runs `.github/workflows/release.yml`
+on a GitHub macOS runner: tag `v$(bin/version)`, universal build, Developer ID
+signed + notarized, published with `latest.json`. Running copies poll
+`releases/latest/download/latest.json` every 30 min (`updater.rs`) and show an
+Update button in the sidebar. Only builds made with `tauri.release.conf.json`
+carry the updater — `yarn install:app` and `bin/dev` builds never self-update.
+The updater key is `~/.membox-updater-key` (back it up: lose it and every
+installed copy is stranded). A version bump beyond patch = edit `tauri.conf.json`.
 
 Data: `~/Library/Application Support/com.membox.desktop[.dev]/` — `membox.db`,
 `blobs/`, `scratch/<item>/` (what each agent run saw/wrote), `mcp.json`
@@ -127,6 +138,10 @@ Data: `~/Library/Application Support/com.membox.desktop[.dev]/` — `membox.db`,
   `$(getconf DARWIN_USER_CACHE_DIR)/com.apple.dock.iconcache`, that survives
   `killall Dock`, an iconservices wipe and `lsregister -f` (Finder shows the
   new icon all along). `rm` that file, then `killall Dock`.
+- `can't find crate for futures_macro/tauri_macros` (E0463) on a release build
+  with the proc-macro dylib sitting right there = a corrupted `target/release`
+  (2026-09, after interleaved builds with different profile settings). A cold
+  build is fine: `cargo clean --release`.
 - Tauri `generate_context!` rejects non-RGBA icon PNGs. Extension bundle ids must nest under the app id or the simulator refuses the install.
 - `app.css` loads after CSS Modules; a global `.glass` rule can override a module's background.
 - Writing JSON files from Python heredocs: `"\\n"` inside a quoted heredoc is a literal backslash-n.

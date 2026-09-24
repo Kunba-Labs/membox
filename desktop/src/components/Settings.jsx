@@ -21,13 +21,25 @@ const THEMES = [
 
 export default function Settings({ onClose }) {
   const settings = useStore((s) => s.settings) || {};
-  const [tab, setTab] = useState("agent");
+  const update = useStore((s) => s.update);
+  const [tab, setTab] = useState(update ? "library" : "agent");
+  const [version, setVersion] = useState(null);
+  const [upd, setUpd] = useState(null); // null · "checking" · "installing" · "current" · error text
   const [agents, setAgents] = useState([]);
   const [mcp, setMcp] = useState(null);
   const [sync, setSync] = useState(null);
   const [paths, setPaths] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const checkUpdate = () => {
+    setUpd("checking");
+    actions.checkUpdate().then((v) => setUpd(v ? null : "current"), (e) => setUpd(String(e)));
+  };
+  const installUpdate = () => {
+    setUpd("installing");
+    actions.installUpdate().catch((e) => setUpd(String(e))); // success relaunches
+  };
 
   const refreshSync = () => actions.syncStatus().then(setSync);
   const syncNow = async () => {
@@ -40,6 +52,7 @@ export default function Settings({ onClose }) {
     actions.mcp().then(setMcp);
     actions.paths().then(setPaths).catch(() => {});
     refreshSync();
+    if (tauri) actions.version().then(setVersion);
     const key = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -62,6 +75,7 @@ export default function Settings({ onClose }) {
               {t.name}
               {t.id === "agent" && <span className={css.tabValue}>{laneName}</span>}
               {t.id === "sync" && settings.syncEnabled && <span className={css.tabDot} title="on" />}
+              {t.id === "library" && update && <span className={css.tabDot} title="update waiting" />}
             </button>
           ))}
         </nav>
@@ -214,6 +228,28 @@ export default function Settings({ onClose }) {
 
             {tab === "library" && (
               <>
+                {tauri && (
+                  <div className={css.field}>
+                    <div className={css.fieldLabel}>
+                      Version
+                      <small>
+                        membox {version ?? "…"}
+                        {update ? ` — ${update} is ready.`
+                          : upd === "current" ? " — up to date."
+                            : upd && upd !== "checking" && upd !== "installing" ? <> — <span className={css.bad}>{upd}</span></> : ""}
+                      </small>
+                    </div>
+                    {update ? (
+                      <button className={css.btn} disabled={upd === "installing"} onClick={installUpdate}>
+                        {upd === "installing" ? "Updating…" : "Update and restart"}
+                      </button>
+                    ) : (
+                      <button className={css.btn} disabled={upd === "checking"} onClick={checkUpdate}>
+                        {upd === "checking" ? "Checking…" : "Check for updates"}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className={css.field}>
                   <div className={css.fieldLabel}>
                     Where it lives

@@ -80,6 +80,7 @@ function Row({ icon: Icon, emoji, label, count, active, indent, onClick, caret, 
 export default function Sidebar({ selected, onSelect, onCollapse, onSettings, onAdd }) {
   const state = useStore();
   const n = counts(state);
+  const update = state.update;
   const [open, setOpen] = useState(() => new Set(state.folders.map((f) => f.id)));
   const [filter, setFilter] = useState("");
   const [menu, setMenu] = useState(null);
@@ -127,6 +128,7 @@ export default function Sidebar({ selected, onSelect, onCollapse, onSettings, on
     <nav className={css.sidebar}>
       <div className={css.titlebar}>
         <IconButton label="Add something (paste or type)" onClick={onAdd}><I.Plus /></IconButton>
+        {update && <button className={css.update} title={`membox ${update} is ready`} onClick={onSettings}>Update</button>}
         <IconButton label="Settings" onClick={onSettings}><I.Gear /></IconButton>
         <IconButton label="Hide sidebar (⌘\\)" onClick={onCollapse}><I.Panel /></IconButton>
       </div>

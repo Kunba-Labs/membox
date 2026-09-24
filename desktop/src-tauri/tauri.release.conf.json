@@ -1,0 +1,14 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "bundle": {
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/Kunba-Labs/membox/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIzMjcwODMxMTMyODJEODgKUldTSUxTZ1RNUWduczlJdTRsLzVkWUdweVFYVzhaSU1PM2JrS3ZsQ1dDNHh1ci8zeGg5OFhScm8K"
+    }
+  }
+}

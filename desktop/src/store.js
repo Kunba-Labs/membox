@@ -52,6 +52,11 @@ async function tauriInit() {
     clearTimeout(t);
     t = setTimeout(refresh, 80);
   });
+  // A release build polls latest.json (updater.rs) and says when one is waiting.
+  await listen("update://available", (e) => {
+    state = { ...state, update: e.payload };
+    emit();
+  });
 }
 
 const dispatch = (action, args = {}) => invoke("dispatch", { action, args });
@@ -68,6 +73,7 @@ async function refresh() {
     folders: nest(s.folders),
     settings: s.settings,
     queue: s.queue,
+    update: state.update,
     ready: true,
   };
   emit();
@@ -110,6 +116,9 @@ const remote = {
   sync: () => dispatch("sync"),
   syncStatus: () => dispatch("syncStatus"),
   reset: () => dispatch("reset"),
+  version: () => import("@tauri-apps/api/app").then((m) => m.getVersion()),
+  checkUpdate: () => invoke("check_for_updates"),
+  installUpdate: () => invoke("install_update"),
   fake: false,
 };
 

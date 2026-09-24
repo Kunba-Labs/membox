@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# The version every release carries — gliph's scheme.
+#
+#   bin/version          0.1.734
+#   bin/version --long   0.1.734+300aae9
+#
+# MAJOR.MINOR is whatever tauri.conf.json says; PATCH is the commit count on
+# HEAD. Every push to main is therefore a strictly larger SemVer without anyone
+# bumping anything, which is what the updater compares. A real bump (0.2) is a
+# one-line edit to tauri.conf.json.
+set -euo pipefail
+ROOT="$(cd -P "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+base=$(sed -n 's/^ *"version": *"\([0-9]*\.[0-9]*\)\..*/\1/p' "$ROOT/desktop/src-tauri/tauri.conf.json" | head -1)
+v="$base.$(git -C "$ROOT" rev-list --count HEAD)"
+[ "${1:-}" = "--long" ] && v="$v+$(git -C "$ROOT" rev-parse --short HEAD)"
+echo "$v"

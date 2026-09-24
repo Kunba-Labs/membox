@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod browser;
+mod updater;
 
 use std::sync::Arc;
 
@@ -74,7 +75,7 @@ fn inherit_login_path() {
 fn main() {
     inherit_login_path();
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         // Size and position come back, like inbox2's. MAXIMIZED is dropped from
         // the flags: with a transparent window and an Overlay titlebar,
         // is_maximized() lies on macOS and the app relaunches maximized when the
@@ -85,7 +86,15 @@ fn main() {
                 .with_state_flags(tauri_plugin_window_state::StateFlags::all() & !tauri_plugin_window_state::StateFlags::MAXIMIZED)
                 .with_denylist(&[browser::WINDOW])
                 .build(),
-        )
+        );
+    // Only a release build has an updater config; see updater.rs.
+    let ctx = tauri::generate_context!();
+    let builder = if ctx.config().plugins.0.contains_key("updater") {
+        builder.plugin(tauri_plugin_updater::Builder::new().build())
+    } else {
+        builder
+    };
+    builder
         .setup(|app| {
             // The embedded browser (§4.1): its own window, a real WKWebView.
             // WebKit pauses requestAnimationFrame and WebGL in a window it
@@ -123,9 +132,10 @@ fn main() {
             }));
             log::info!("membox data dir: {} · log: {}", data_dir.display(), log_path.display());
             app.manage(Core(lib));
+            updater::poll(app.handle());
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![dispatch, blobs_dir, show_browser, open_url])
-        .run(tauri::generate_context!())
+        .invoke_handler(tauri::generate_handler![dispatch, blobs_dir, show_browser, open_url, updater::check_for_updates, updater::install_update])
+        .run(ctx)
         .expect("error while running membox");
 }
