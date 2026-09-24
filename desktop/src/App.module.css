@@ -1,0 +1,35 @@
+.app {
+  display: flex;
+  height: 100%;
+  position: relative;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The collapsed sidebar: just enough to bring it back, beside the traffic
+   lights. Absolute, not a flex item — as a flex item its 116px came out of the
+   window for the *whole* height, so hiding the sidebar left a 116px empty
+   gutter running down the left of the grid. Now only the titlebar row gives up
+   the space, and the toolbar insets itself to clear it. */
+.rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 116px;
+  height: var(--titlebar-h);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  -webkit-app-region: drag;
+}
+
+.rail button {
+  -webkit-app-region: no-drag;
+}

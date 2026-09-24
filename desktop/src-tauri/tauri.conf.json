@@ -1,0 +1,70 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "membox",
+  "mainBinaryName": "membox",
+  "version": "0.1.0",
+  "identifier": "com.membox.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5210",
+    "beforeDevCommand": "lsof -ti:5210 >/dev/null 2>&1 || yarn vite",
+    "beforeBuildCommand": "yarn build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 940,
+        "minHeight": 600,
+        "transparent": true,
+        "backgroundColor": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": {
+          "x": 13,
+          "y": 15
+        },
+      "dragDropEnabled": false,
+        "windowEffects": {
+          "effects": [
+            "hudWindow"
+          ],
+          "state": "active"
+        }
+      }
+    ],
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "icon": [
+      "../../brand/generated/tauri/32x32.png",
+      "../../brand/generated/tauri/128x128.png",
+      "../../brand/generated/tauri/128x128@2x.png",
+      "../../brand/generated/tauri/icon.icns"
+    ],
+    "category": "Productivity",
+    "macOS": {
+      "minimumSystemVersion": "13.0"
+    }
+  }
+}

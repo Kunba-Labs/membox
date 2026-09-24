@@ -1,0 +1,242 @@
+.sidebar {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  width: var(--sidebar-w);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--rule);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.titlebar {
+  height: var(--titlebar-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 0 8px 0 78px; /* clears the traffic lights */
+  -webkit-app-region: drag;
+}
+
+.titlebar button {
+  -webkit-app-region: no-drag;
+}
+
+.library {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 8px 10px;
+  padding: 6px 8px;
+}
+
+.library:hover {
+  background: var(--hover);
+}
+
+.libraryMark {
+  border-radius: var(--r-chip);
+  width: 22px;
+  height: 22px;
+  flex: none;
+  object-fit: cover;
+}
+
+.libraryName {
+  font-weight: 600;
+  font-size: 13px;
+  flex: 1;
+  text-align: left;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 27px;
+  padding: 0 8px;
+  color: var(--text);
+  text-align: left;
+  transition: background var(--fast) var(--ease);
+}
+
+.row:hover {
+  background: var(--hover);
+}
+
+.row[aria-current="true"] {
+  background: var(--row-current-bg);
+  color: var(--row-current-fg);
+}
+
+.row[aria-current="true"] .count,
+.row[aria-current="true"] .smart .rowIcon {
+  color: var(--star);
+}
+
+.rowIcon {
+  color: var(--on-accent);
+}
+
+.rowIcon {
+  flex: none;
+  color: var(--text-2);
+}
+
+.rowLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  flex: none;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.section {
+  padding: 18px 8px 6px;
+  color: var(--label-color);
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-track);
+  text-transform: var(--label-case);
+}
+
+.caret {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--text-3);
+  margin-left: -4px;
+  transition: transform var(--fast) var(--ease);
+}
+
+.emoji {
+  flex: none;
+  width: 16px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.child {
+  padding-left: 26px;
+}
+
+.child .rowIcon {
+  color: var(--folder);
+}
+
+.tree {
+  position: relative;
+}
+
+/* Eagle's hairline connecting a group to its children */
+.group::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 27px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--rule);
+}
+
+.group {
+  position: relative;
+}
+
+.footer {
+  flex: none;
+  padding: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.filter {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter svg {
+  position: absolute;
+  left: 9px;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.filter input {
+  padding-left: 30px;
+  height: 30px;
+}
+
+.dropOver {
+  background: var(--wash) !important;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.rename {
+  flex: 1;
+  height: 21px;
+  padding: 0 6px;
+  font-size: 13px;
+}
+
+.section {
+  display: flex;
+  align-items: center;
+}
+
+.sectionAdd {
+  border-radius: var(--r-chip);
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+  opacity: 0;
+}
+
+.section:hover .sectionAdd {
+  opacity: 1;
+}
+
+.sectionAdd:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.sectionAdd svg {
+  width: 12px;
+  height: 12px;
+}
+
+.proposed .rowLabel {
+  color: var(--text-2);
+  font-style: italic;
+}
+
+.suggested {
+  border-radius: var(--r-chip);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--row-current-fg);
+  background: var(--row-current-bg);
+  padding: 1px 5px;
+}

@@ -1,0 +1,164 @@
+/* membox design tokens — docs/Feature-Spec.md §6.9.
+   Single source of truth. ios/Sources/Theme.swift mirrors these as Swift
+   constants; change one, change the other.
+
+   Two themes, and the difference between them is entirely here. Bauhaus is
+   the default: ink panels on one flat ground, ruled apart, three unmixed
+   primaries used at full strength — blue selects, red files, yellow marks.
+   Glass is the original: translucent panes blurred over a gradient, soft
+   corners, a wash instead of a block.
+
+   That means shape and softness are tokens too, not decisions taken in a
+   component: a radius, a shadow, a blur, the width of a rule, and how a label
+   is set. A component asks for --r-tile; only this file knows it is 0.
+
+   Switching is `document.documentElement.dataset.theme = "glass"` — App.jsx
+   does it from settings.theme, which syncs with everything else. */
+
+:root {
+  /* ── Bauhaus ─────────────────────────────────────────────────────── */
+
+  /* Ground and panels */
+  --ground: #0d0d10;
+  --ground-bg: var(--ground);
+  --panel: #17171c;
+  --panel-2: #202027;
+  /* Dialogs and menus are solid in both looks — glass is for panes over the
+     desktop, not for text that has to be read over a busy grid. */
+  --surface: #17171c;
+  --rule: #2c2c34;
+  --blur: none;
+
+  /* The three primaries */
+  --accent: #2d51e0;
+  --folder: #d93b2b;
+  --star: #f0b323;
+  --on-accent: #f2f1ee;
+  --danger: var(--folder);
+  --warn: var(--star);
+
+  /* Text */
+  --text: #f2f1ee;
+  --text-2: #98979f;
+  --text-3: #66656d;
+  --hover: rgba(242, 241, 238, 0.06);
+
+  /* Shape. Square, and held by a keyline rather than a shadow. */
+  --r-tile: 0;
+  --r-chip: 0;
+  --r-field: 0;
+  --r-round: 0;
+  --r-sheet: 0;
+  --blur-sm: none;
+  --shadow: none;
+  --tile-border: 1px;
+  --tile-shadow: none;
+  --tile-shadow-hover: none;
+  --tile-hover-rule: var(--text-3);
+  --caption-rule: 1px;
+  --heading-rule: 1px;
+
+  /* Labels — a word that names something rather than saying it */
+  --label-size: 10px;
+  --label-track: 0.12em;
+  --label-case: uppercase;
+  --label-color: var(--text-3);
+
+  /* Blocks: full strength, or not at all */
+  --row-current-bg: var(--accent);
+  --row-current-fg: var(--on-accent);
+  --badge-bg: var(--ground);
+  --badge-fg: var(--text);
+  --chip-folder-bg: var(--folder);
+  --chip-folder-line: var(--folder);
+  --chip-folder-fg: var(--on-accent);
+  --btn-bg: var(--accent);
+  --btn-line: var(--accent);
+  --btn-fg: var(--on-accent);
+  --wash: color-mix(in srgb, var(--accent) 22%, transparent);
+
+  /* A tile with nothing to show yet is a flat block of its kind's colour */
+  --blank-video: var(--accent);
+  --blank-image: var(--star);
+  --blank-audio: var(--folder);
+  --blank-note: var(--on-accent);
+  --blank-web: var(--panel-2);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 120ms;
+  --base: 180ms;
+
+  /* Metrics */
+  --sidebar-w: 224px;
+  --inspector-w: 268px;
+  --titlebar-h: 44px;
+}
+
+:root[data-theme="glass"] {
+  /* ── Glass — the original design, unchanged in value ─────────────── */
+  --ground: #141a26;
+  --ground-bg: linear-gradient(160deg, #141a26, #1b2231);
+  --panel: rgba(255, 255, 255, 0.045);
+  --panel-2: rgba(255, 255, 255, 0.08);
+  --surface: #1a2130;
+  --rule: rgba(255, 255, 255, 0.08);
+  --blur: blur(24px) saturate(180%);
+
+  --accent: #4a9eff;
+  --folder: #e8a0c8;
+  --star: #f5b942;
+  --on-accent: #0d1117;
+  --danger: #ff6b6b;
+  --warn: #ffb86b;
+
+  --text: #e8edf5;
+  --text-2: #8a93a3;
+  --text-3: #5a6272;
+  --hover: rgba(255, 255, 255, 0.05);
+
+  --r-tile: 10px;
+  --r-chip: 8px;
+  --r-field: 8px;
+  --r-round: 999px;
+  --r-sheet: 14px;
+  --blur-sm: blur(10px);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --tile-border: 0px;
+  --tile-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --tile-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --tile-hover-rule: transparent;
+  --caption-rule: 0px;
+  --heading-rule: 0px;
+
+  --label-size: 12px;
+  --label-track: 0.01em;
+  --label-case: none;
+  --label-color: var(--text-2);
+
+  /* A wash, not a block — the original's whole way of marking a thing */
+  --row-current-bg: var(--panel-2);
+  --row-current-fg: var(--text);
+  --badge-bg: rgba(10, 14, 20, 0.66);
+  --badge-fg: var(--text);
+  --chip-folder-bg: rgba(232, 160, 200, 0.12);
+  --chip-folder-line: rgba(232, 160, 200, 0.24);
+  --chip-folder-fg: var(--text);
+  --btn-bg: var(--panel-2);
+  --btn-line: var(--rule);
+  --btn-fg: var(--text);
+  --wash: rgba(74, 158, 255, 0.18);
+
+  --blank-video: linear-gradient(150deg, #1b2330, #141a24);
+  --blank-image: var(--blank-video);
+  --blank-audio: var(--blank-video);
+  --blank-note: var(--blank-video);
+  --blank-web: var(--blank-video);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fast: 0ms;
+    --base: 0ms;
+  }
+}

@@ -1,0 +1,234 @@
+/* A sticky, §9. Real paper: light stock, dark ink, a square corner and the
+   faintest gradient, in a dark app. That contrast is the point — a note should
+   look stuck to the wall, not built into the window. Colours come in as
+   --paper / --ink from the item (Note.jsx PAPERS). */
+.note {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 20px 24px 8px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.title {
+  width: 100%;
+  padding: 0 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.title::placeholder {
+  color: color-mix(in srgb, var(--ink) 42%, transparent);
+}
+
+.title:focus {
+  outline: none;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.bar button {
+  border-radius: var(--r-chip);
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.bar button:hover {
+  background: var(--paper-line);
+  color: var(--ink);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* The pad it was torn from */
+.colors {
+  display: inline-flex;
+  gap: 5px;
+  margin-right: 10px;
+}
+
+.swatch,
+.bar .swatch {
+  border-radius: var(--r-chip);
+  width: 13px;
+  height: 13px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  box-shadow: none;
+}
+
+.swatchOn {
+  outline: 1.5px solid var(--ink);
+  outline-offset: 1.5px;
+}
+
+.linkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.linkBtn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 0 24px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.body:focus {
+  outline: none;
+}
+
+.body:empty::before {
+  content: attr(data-placeholder);
+  color: color-mix(in srgb, var(--ink) 38%, transparent);
+}
+
+.body h3 {
+  margin: 14px 0 4px;
+  font-size: 15px;
+}
+
+.body ul,
+.body ol {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.body blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.body a:not([data-item]) {
+  color: color-mix(in srgb, var(--ink) 85%, #2d51e0);
+}
+
+/* An item the note points at. Reads as a thing, not a URL. */
+.chip {
+  border-radius: var(--r-round);
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 8px;
+  margin: 0 1px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--paper-line);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Picking something to link: the app's own surface, on top of the paper. */
+.picker {
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: none;
+  overflow: hidden;
+  color: var(--text);
+}
+
+.picker input {
+  width: 100%;
+  padding: 8px 11px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.picker input:focus {
+  outline: none;
+}
+
+.picker ul {
+  max-height: 208px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.picker li button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.picker li button:hover {
+  background: var(--hover);
+}
+
+.picker img,
+.noShot {
+  border-radius: var(--r-chip);
+  width: 30px;
+  height: 22px;
+  flex: none;
+  object-fit: cover;
+  background: var(--panel-2);
+}
+
+.hitTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hitKind {
+  flex: none;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  color: var(--text-3);
+}
+
+.none {
+  padding: 8px 11px;
+  font-size: 12px;
+  color: var(--text-3);
+}

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# membox restore — put a bin/backup snapshot back. The app must be quit; the
+# library it replaces is kept next to itself as <dir>.before-restore-<stamp>,
+# so a wrong restore is undoable.
+#
+#   bin/restore                    # newest backup of the daily identity
+#   bin/restore --dev
+#   bin/restore <backup-dir>
+set -euo pipefail
+
+id="com.membox.desktop"
+[[ "${1:-}" == "--dev" ]] && { id="com.membox.desktop.dev"; shift; }
+
+src="$HOME/Library/Application Support/$id"
+root="$HOME/Library/Application Support/membox-backups/$id"
+from="${1:-$(ls -1d "$root"/*/ 2>/dev/null | sort -r | head -1 || true)}"
+from="${from%/}"
+[[ -n "$from" && -f "$from/membox.db" ]] || { echo "no backup to restore (looked in $root)" >&2; exit 1; }
+
+if [[ -f "$src/membox.db" ]] && lsof "$src/membox.db" >/dev/null 2>&1; then
+  echo "$id is running — quit membox first." >&2
+  exit 1
+fi
+
+if [[ -d "$src" ]]; then
+  aside="$src.before-restore-$(date +%Y%m%d-%H%M%S)"
+  mv "$src" "$aside"
+  echo "current library moved to $aside"
+fi
+mkdir -p "$src"
+cp -c "$from/membox.db" "$src/membox.db" 2>/dev/null || cp "$from/membox.db" "$src/membox.db"
+if [[ -d "$from/blobs" ]]; then
+  cp -Rc "$from/blobs" "$src/blobs" 2>/dev/null || cp -R "$from/blobs" "$src/blobs"
+fi
+echo "restored $id ← $from"

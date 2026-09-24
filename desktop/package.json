@@ -1,0 +1,27 @@
+{
+  "name": "membox-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev -c src-tauri/tauri.dev.conf.json",
+    "dev:prod": "tauri dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "install:app": "node scripts/install-local.mjs",
+    "install:app:dev": "node scripts/install-local.mjs --dev"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/cli": "^2.11.4",
+    "@vitejs/plugin-react": "^5.1.0",
+    "react-grab": "0.2.0",
+    "vite": "^7.2.0"
+  }
+}

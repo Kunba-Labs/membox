@@ -1,0 +1,104 @@
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+  color: var(--text);
+  /* Flat ink under Bauhaus, a gradient under Glass — tokens.css decides. */
+  background: var(--ground-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+  cursor: default;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+
+input,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 7px 9px;
+  outline: none;
+  width: 100%;
+  resize: none;
+}
+
+textarea {
+  min-height: 76px;
+  line-height: 1.5;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-3);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--wash);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: var(--r-chip);
+  background: rgba(255, 255, 255, 0.12);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.iconBtn {
+  border-radius: var(--r-chip);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--text-2);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.iconBtn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.iconBtn[aria-pressed="true"] {
+  background: var(--panel-2);
+  color: var(--text);
+}

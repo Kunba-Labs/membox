@@ -1,0 +1,366 @@
+/* Settings — a rail and a pane, like the app itself. Solid, not glass: a
+   dialog with this much text has to be read, not admired. */
+.backdrop {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.sheet {
+  border-radius: var(--r-sheet);
+  display: grid;
+  grid-template-columns: 194px 1fr;
+  width: min(860px, 92vw);
+  height: min(560px, 86vh);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: none;
+}
+
+/* ---- rail ---- */
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 10px;
+  background: var(--panel);
+  border-right: 1px solid var(--rule);
+}
+
+.railTitle {
+  padding: 4px 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  font-size: 13px;
+  color: var(--text-2);
+  text-align: left;
+}
+
+.tab svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  opacity: 0.85;
+}
+
+.tab:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.tabOn,
+.tabOn:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+/* The current value, quietly, so the rail answers half the questions. */
+.tabValue {
+  margin-left: auto;
+  max-width: 74px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.tabDot {
+  border-radius: var(--r-round);
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  background: var(--wash);
+}
+
+/* ---- pane ---- */
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* A grid item is min-height:auto, so .body's overflow-y never had a height
+     to scroll inside — the sheet just clipped it. */
+  min-height: 0;
+}
+
+.paneHead {
+  position: relative;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.paneHead h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.paneHead p {
+  margin: 3px 46px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.close {
+  border-radius: var(--r-round);
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+}
+
+.close:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 22px 22px;
+}
+
+.prose {
+  margin: 0 0 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 62ch;
+}
+
+/* ---- a labelled control, label left, control right ---- */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.field:first-child {
+  border-top: 0;
+}
+
+.fieldLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.fieldLabel small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.fieldLabel code,
+.laneNote code {
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-2);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+/* ---- lanes ---- */
+.lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.lane {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "r name pill" "r note note";
+  column-gap: 10px;
+  row-gap: 1px;
+  align-items: center;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  cursor: default;
+}
+
+.lane:hover {
+  background: var(--hover);
+}
+
+.lane input {
+  grid-area: r;
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.lane.on,
+.lane.on:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: var(--wash);
+}
+
+.lane.missing {
+  opacity: 0.5;
+}
+
+.laneName {
+  grid-area: name;
+  font-size: 13px;
+}
+
+.laneNote {
+  grid-area: note;
+  font-size: 11.5px;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.laneNote a {
+  color: var(--accent);
+}
+
+/* A dot and a word: the fact, not a shouty badge. */
+.pill {
+  grid-area: pill;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.pill i {
+  border-radius: var(--r-round);
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+
+.cloud i {
+  background: var(--warn);
+}
+
+.local i {
+  background: var(--accent);
+}
+
+/* ---- controls ---- */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  width: 208px;
+}
+
+.slider input[type="range"] {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+}
+
+.val {
+  width: 34px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+
+.text {
+  width: 208px;
+  padding: 6px 9px;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.text:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn,
+.mono {
+  flex: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+}
+
+.btn:hover,
+.mono:hover {
+  border-color: var(--text-3);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.mono {
+  font: 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent);
+}
+
+.danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Each look shows its own three marks, in its own shape — a square block or a
+   soft translucent one. The point is visible before the words are read. */
+.themeMark {
+  grid-area: pill;
+  display: flex;
+  gap: 4px;
+}
+
+.themeMark i {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.themeMark[data-theme-mark="bauhaus"] i:nth-child(1) { background: #2d51e0; }
+.themeMark[data-theme-mark="bauhaus"] i:nth-child(2) { background: #d93b2b; }
+.themeMark[data-theme-mark="bauhaus"] i:nth-child(3) { background: #f0b323; }
+
+.themeMark[data-theme-mark="glass"] i {
+  border-radius: 5px;
+}
+.themeMark[data-theme-mark="glass"] i:nth-child(1) { background: #4a9eff; }
+.themeMark[data-theme-mark="glass"] i:nth-child(2) { background: #e8a0c8; }
+.themeMark[data-theme-mark="glass"] i:nth-child(3) { background: #f5b942; }

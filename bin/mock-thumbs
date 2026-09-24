@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Generate the offline placeholder thumbnails the mock library points at.
+
+The desktop app is local-first; its dev fixtures shouldn't need the internet
+either. These are abstract gradient plates, not photos — enough to judge
+layout, density and chrome. Real tiles come from the screenshot pipeline.
+
+Usage: bin/mock-thumbs
+"""
+import math
+import os
+
+from PIL import Image, ImageDraw, ImageFilter
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT = os.path.join(ROOT, "desktop", "public", "mock")
+
+# (aspect_w, aspect_h) per item, mirroring desktop/src/mock.js
+ASPECTS = [
+    (3, 4), (16, 9), (3, 4), (1, 1), (4, 5), (4, 5), (16, 9), (2, 3),
+    (16, 9), (4, 3), (1, 1), (3, 4), (4, 5), (16, 10), (3, 4), (2, 3),
+    (3, 2), (16, 9), (1, 1), (4, 5), (16, 9), (1, 1), (4, 3), (3, 4),
+]
+
+PALETTES = [
+    ((26, 42, 66), (79, 132, 176), (232, 185, 138)),   # cool blue / warm sand
+    ((30, 61, 52), (103, 166, 138), (224, 201, 143)),  # green / gold
+    ((58, 42, 74), (140, 111, 176), (232, 160, 200)),  # violet / pink
+    ((66, 34, 30), (186, 96, 66), (240, 200, 150)),    # rust / cream
+    ((20, 34, 48), (60, 108, 140), (200, 220, 234)),   # deep sea
+    ((48, 40, 24), (150, 128, 72), (236, 220, 176)),   # savanna
+]
+
+
+def lerp(a, b, t):
+    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+def plate(w, h, seed):
+    top, mid, warm = PALETTES[seed % len(PALETTES)]
+    im = Image.new("RGB", (w, h))
+    px = im.load()
+    # vertical two-stop gradient
+    for y in range(h):
+        c = lerp(top, mid, y / max(1, h - 1))
+        for x in range(w):
+            px[x, y] = c
+
+    # a few soft blobs of the warm accent, deterministic per seed
+    blobs = Image.new("RGB", (w, h), (0, 0, 0))
+    d = ImageDraw.Draw(blobs)
+    for i in range(4):
+        a = seed * 1.7 + i * 2.3
+        cx = int(w * (0.5 + 0.42 * math.sin(a)))
+        cy = int(h * (0.5 + 0.42 * math.cos(a * 1.3)))
+        r = int(min(w, h) * (0.18 + 0.16 * abs(math.sin(a * 0.7))))
+        tint = warm if i % 2 == 0 else lerp(mid, (255, 255, 255), 0.35)
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=tint)
+    blobs = blobs.filter(ImageFilter.GaussianBlur(radius=max(w, h) * 0.09))
+    im = Image.blend(im, blobs, 0.42)
+
+    # horizon line — gives the plates a photographic read at tile size
+    hz = int(h * (0.58 + 0.18 * math.sin(seed * 2.1)))
+    band = im.crop((0, hz, w, h)).point(lambda p: int(p * 0.72))
+    im.paste(band, (0, hz))
+    return im.filter(ImageFilter.GaussianBlur(radius=0.6))
+
+
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    base = 480
+    for i, (aw, ah) in enumerate(ASPECTS):
+        w, h = base, round(base * ah / aw)
+        plate(w, h, i + 3).save(os.path.join(OUT, f"{i}.jpg"), quality=82)
+        # webpage tiles use a tall full-page shot for the hover scroll (§4.5)
+        tall = plate(base, base * 3, i + 3)
+        tall.save(os.path.join(OUT, f"{i}-page.jpg"), quality=78)
+    print(f"wrote {len(ASPECTS) * 2} plates to {OUT}")
+
+
+if __name__ == "__main__":
+    main()

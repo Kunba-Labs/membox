@@ -1,0 +1,68 @@
+# Push a tag like v0.2.0 → a draft GitHub release with a universal macOS .dmg.
+# Signed + notarized when the APPLE_* secrets are set; ad-hoc signed otherwise.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+          cache-dependency-path: desktop/yarn.lock
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: yarn install --frozen-lockfile
+        working-directory: desktop
+
+      # Only export the signing env when a certificate exists — an empty
+      # APPLE_CERTIFICATE makes the Tauri CLI try to import nothing and fail.
+      - name: Signing
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            for v in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID; do
+              echo "$v<<__EOF__" >> "$GITHUB_ENV"; printenv "$v" >> "$GITHUB_ENV"; echo "__EOF__" >> "$GITHUB_ENV"
+            done
+          else
+            echo "APPLE_SIGNING_IDENTITY=-" >> "$GITHUB_ENV"
+          fi
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          args: --target universal-apple-darwin
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: membox ${{ github.ref_name }}
+          releaseDraft: true
+
+      # A manual run (no tag) makes no release — keep the .dmg as a run artifact.
+      - uses: actions/upload-artifact@v4
+        if: github.ref_type != 'tag'
+        with:
+          name: membox-macos
+          path: target/universal-apple-darwin/release/bundle/dmg/*.dmg

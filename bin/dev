@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# membox Dev — the play-around identity (com.membox.desktop.dev): its own
+# library, Dock icon and iCloud folder. The daily app is `yarn install:app`.
+set -e
+cd "$(dirname "$0")/../desktop"
+exec yarn dev "$@"   # the `dev` script pins src-tauri/tauri.dev.conf.json (dev identity + DEV-badged icon)

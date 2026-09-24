@@ -1,0 +1,110 @@
+name: Membox
+options:
+  bundleIdPrefix: com.membox
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    # The static Rust lib needs these.
+    OTHER_LDFLAGS: ["-lc++"]
+
+targets:
+  Membox:
+    type: application
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.membox.Membox
+        # Automatic signing with -allowProvisioningUpdates registers the App
+        # ID, the App Group and the iCloud container on the portal.
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: KF53B4S5HD
+    sources:
+      - path: Sources
+      - path: Generated
+      - path: Shared
+      - path: Assets.xcassets
+        buildPhase: resources
+    info:
+      path: Membox-Info.plist
+      properties:
+        CFBundleDisplayName: membox
+        # §9.4 — flat ground + centred mark, no storyboard.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: false
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        # The phone is portrait; the iPad must offer all four or App Store
+        # Connect rejects the build (90474, iPad multitasking). This file is the
+        # source of truth — xcodegen rewrites Membox-Info.plist on every build,
+        # so editing the plist by hand lasts exactly until the next release run.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # Answered once here so TestFlight never asks per build.
+        ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        # The sync folder shows up in iCloud Drive as "membox" (§7.4).
+        NSUbiquitousContainers:
+          iCloud.com.membox:
+            NSUbiquitousContainerIsDocumentScopePublic: true
+            NSUbiquitousContainerName: membox
+            NSUbiquitousContainerSupportedFolderLevels: Any
+    entitlements:
+      path: Membox.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.membox]
+        com.apple.developer.icloud-container-identifiers: [iCloud.com.membox]
+        com.apple.developer.icloud-services: [CloudDocuments]
+        com.apple.developer.ubiquity-container-identifiers: [iCloud.com.membox]
+    dependencies:
+      - framework: ../target/MemboxCore.xcframework
+        embed: false
+      - target: MemboxShare
+      - sdk: Security.framework
+      - sdk: SystemConfiguration.framework
+
+  MemboxShare:
+    type: app-extension
+    platform: iOS
+    settings:
+      base:
+        # An extension's id must be nested under its host app's id, or the
+        # simulator refuses the install ("Mismatched bundle IDs").
+        PRODUCT_BUNDLE_IDENTIFIER: com.membox.Membox.share
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: KF53B4S5HD
+    sources:
+      - path: ShareExtension
+      - path: Generated
+      - path: Shared
+    info:
+      path: MemboxShare-Info.plist
+      properties:
+        CFBundleDisplayName: Add to membox
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsImageWithMaxCount: 1
+    entitlements:
+      path: MemboxShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.membox]
+    dependencies:
+      - framework: ../target/MemboxCore.xcframework
+        embed: false
+      - sdk: Security.framework
+      - sdk: SystemConfiguration.framework

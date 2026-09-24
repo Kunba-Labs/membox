@@ -1,0 +1,47 @@
+/* A cloud, not a list of pills: words at their own size, wrapped, with nothing
+   around them. The chrome was what made the old one read as a table. */
+.cloud {
+  flex: 1;
+  overflow-y: auto;
+  padding: 34px 40px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.words {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 16px;
+  max-width: 980px;
+  margin: 0 auto;
+  line-height: 1.45;
+}
+
+.tag {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  transition: color var(--fast) var(--ease);
+}
+
+.tag:hover {
+  color: var(--accent);
+  opacity: 1 !important;
+}
+
+.foot {
+  margin: 28px auto 0;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  color: var(--text-3);
+}

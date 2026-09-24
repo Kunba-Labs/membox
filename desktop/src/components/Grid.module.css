@@ -1,0 +1,456 @@
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* Flex columns with round-robin fill, not CSS `columns` — CSS columns lays out
+   top-to-bottom-then-across, so a date-sorted library reads down the first
+   column instead of across the first row the way Eagle does.
+   ponytail: round-robin, so tile order is exactly library order. Columns can
+   end uneven when aspect ratios vary; shortest-column packing would balance
+   them but would break reading order, which matters more here. */
+.grid {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+}
+
+.tile {
+  margin-bottom: 10px;
+  width: 100%;
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background: var(--panel);
+  border: var(--tile-border) solid var(--rule);
+  box-shadow: var(--tile-shadow);
+  /* Offscreen tiles cost nothing: WebKit skips their style, layout and paint,
+     and remembers each one's real height after the first pass (`auto`), so the
+     scrollbar stays honest. --tile-h is only the guess for one never seen yet.
+     ponytail: no windowing library — the masonry columns stay plain DOM, which
+     is what keeps drag, ⌘F and scrollIntoView working. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--tile-h, 300px);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.tile:hover {
+  border-color: var(--tile-hover-rule);
+  box-shadow: var(--tile-shadow-hover);
+}
+
+.tile[aria-selected="true"] {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.media {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--panel-2);
+}
+
+.media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* §4.5 — full-page screenshot panned on hover, not an encoded video.
+   Frame is 4:5, page shot is 1:3, so the travel is a constant -140%. */
+.scrollShot {
+  aspect-ratio: 4 / 5;
+}
+
+.scrollShot img.base {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.scrollShot img.pan {
+  position: absolute;
+  top: 0;
+  height: auto;
+  opacity: 0;
+  transition: top 4s linear, opacity 250ms var(--ease);
+}
+
+.tile:hover .scrollShot img.pan {
+  opacity: 1;
+  top: -140%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollShot img.pan {
+    transition: opacity 250ms var(--ease);
+  }
+  .tile:hover .scrollShot img.pan {
+    top: 0;
+  }
+}
+
+/* §4.5's hover, for a picture instead of a page: the scale animates in, the
+   origin snaps to the pointer every move, so the picture pans under the cursor.
+   ponytail: transform only — no second, larger image to load. */
+.zoom img {
+  transform-origin: var(--zx, 50%) var(--zy, 50%);
+  transition: transform 200ms var(--ease);
+}
+
+.tile:hover .zoom img {
+  transform: scale(1.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile:hover .zoom img {
+    transform: none;
+  }
+}
+
+/* Pending link: the frame it will become, with the fetch state in the middle
+   instead of a squashed line of URL text under the badges. */
+.placeholder {
+  aspect-ratio: 4 / 5;
+  background: var(--panel-2);
+}
+
+/* Kind is a colour before it is a word: the badge names it, the block carries
+   it, so a wall of items reads by shape and colour before any label is read. */
+.placeholder[data-kind="video"] { background: var(--blank-video); }
+.placeholder[data-kind="web"] { background: var(--blank-web); }
+.placeholder[data-kind="image"] { background: var(--blank-image); }
+.placeholder[data-kind="audio"] { background: var(--blank-audio); }
+.placeholder[data-kind="note"] { background: var(--blank-note); }
+
+.waiting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.waiting svg {
+  width: 13px;
+  height: 13px;
+  animation: spin 900ms linear infinite;
+}
+
+/* It is not thinking, it stopped. Say which, and say why. */
+.stopped {
+  padding: 0 16px;
+  text-align: center;
+  line-height: 1.5;
+  color: var(--danger);
+}
+
+.stopped svg {
+  animation: none;
+  flex: none;
+  color: var(--danger);
+}
+
+.stoppedChip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--danger);
+}
+
+.stoppedChip svg {
+  width: 11px;
+  height: 11px;
+}
+
+.domain {
+  border-radius: var(--r-chip);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--text-2);
+  background: var(--badge-bg);
+}
+
+.badge {
+  border-radius: var(--r-chip);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 2px 6px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-track);
+  text-transform: var(--label-case);
+  color: var(--badge-fg);
+  background: var(--badge-bg);
+}
+
+.duration {
+  border-radius: var(--r-chip);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--badge-fg);
+  background: var(--badge-bg);
+}
+
+.play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  opacity: 0.9;
+  filter: none;
+  pointer-events: none;
+}
+
+.play svg {
+  width: 34px;
+  height: 34px;
+}
+
+/* Playlist tiles: four posters, ruled apart like everything else. */
+.playlist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--rule);
+}
+.playlist[data-n="1"] { grid-template-columns: 1fr; }
+.playlist[data-n="2"] { grid-template-rows: 1fr; }
+.playlist img { min-height: 0; }
+.playlist .duration { display: inline-flex; align-items: center; gap: 4px; }
+.playlist .duration svg { width: 10px; height: 10px; }
+
+/* Music tiles: waveform instead of a poster — §6.4 */
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  padding: 0 12px;
+}
+
+.wave i {
+  border-radius: var(--r-chip);
+  flex: 1;
+  min-width: 1px;
+  background: var(--text-2);
+  opacity: 0.5;
+}
+
+/* Snippet tiles: the captured markup, rendered small — §6.4 */
+.snippet {
+  padding: 30px 14px 16px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-height: 190px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px 8px;
+  font-size: 11.5px;
+  border-top: var(--caption-rule) solid var(--rule);
+}
+
+.captionText {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending {
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+}
+
+.pending svg {
+  width: 11px;
+  height: 11px;
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--text-3);
+}
+
+.tile.focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Selected but not the keyboard's tile: the ring is the same blue, and the
+   focused one takes a solid caption instead of a second, dimmer ring. */
+.tile[aria-selected="true"]:not(.focus) {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.tile.focus .caption {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.tile.focus .ratingDot,
+.tile.focus .pending,
+.tile.focus .stoppedChip {
+  color: var(--on-accent);
+}
+
+.tile[draggable]:active {
+  cursor: grabbing;
+}
+
+.ratingDot {
+  flex: none;
+  font-size: 10px;
+  color: var(--star);
+  font-variant-numeric: tabular-nums;
+}
+
+.emptyMark {
+  border-radius: var(--r-tile);
+  display: inline-block;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  font-size: 18px;
+  color: var(--text-2);
+}
+
+.empty {
+  flex-direction: column;
+  text-align: center;
+  font-size: 13px;
+}
+
+.why {
+  padding: 6px 9px 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.code {
+  font: 10.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+  overflow: hidden;
+  color: var(--text);
+}
+
+.scrollShot img.pan.short {
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.tile:hover .scrollShot img.pan.short {
+  top: 0;
+}
+
+/* Sticky tiles — §9. The same paper the editor is written on, torn off at the
+   top, sitting in a grid of dark screenshots. */
+.sticky {
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.stickyBody {
+  padding: 14px 14px 18px;
+  max-height: 236px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink);
+  -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent);
+  mask-image: linear-gradient(180deg, #000 72%, transparent);
+}
+
+.stickyBody h3 {
+  margin: 6px 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stickyBody ul {
+  margin: 4px 0;
+  padding-left: 16px;
+}
+
+.stickyBody blockquote {
+  margin: 6px 0;
+  padding-left: 9px;
+  border-left: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.stickyBody a[data-item] {
+  border-radius: var(--r-round);
+  padding: 0 5px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--paper-line);
+  text-decoration: none;
+}
+
+.stickyEmpty {
+  padding: 22px 14px;
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.stickyLinks {
+  border-radius: var(--r-round);
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  padding: 1px 7px;
+  font-size: 10px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+}

@@ -1,0 +1,209 @@
+/* The paste sheet — §1.4. Solid like every other dialog; it sits over a busy
+   grid and has to be read. */
+.backdrop {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.sheet {
+  border-radius: var(--r-sheet);
+  width: min(520px, 92vw);
+  padding: 18px 20px 16px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: none;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 12px;
+}
+
+.by {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.spin {
+  width: 13px;
+  height: 13px;
+  animation: pastespin 900ms linear infinite;
+}
+
+@keyframes pastespin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.list {
+  max-height: 232px;
+  overflow-y: auto;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  background: var(--panel);
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mark {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+}
+
+.list li:last-child {
+  border-bottom: 0;
+}
+
+.chip {
+  border-radius: var(--r-chip);
+  flex: none;
+  min-width: 54px;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: center;
+  color: var(--text-2);
+  background: var(--panel-2);
+}
+
+.what {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+/* What will happen to this one, or the person's own words about it. */
+.what small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.note {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  color: var(--text-3);
+}
+
+.more {
+  color: var(--text-3);
+}
+
+/* The text itself, while it is being read — proof that something is happening. */
+.preview {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  max-height: 148px;
+  overflow: hidden;
+  background: var(--panel);
+  font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-3);
+  white-space: pre-wrap;
+  word-break: break-word;
+  -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent);
+  mask-image: linear-gradient(180deg, #000 68%, transparent);
+}
+
+.area {
+  width: 100%;
+  min-height: 132px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--text);
+  font: 13px/1.6 inherit;
+  resize: vertical;
+}
+
+.area:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.hint {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.ghost,
+.primary {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.ghost {
+  color: var(--text-2);
+}
+
+.ghost:hover {
+  background: var(--hover);
+}
+
+.primary {
+  color: #fff;
+  background: var(--accent);
+}
+
+.primary:disabled {
+  opacity: 0.45;
+}
+
+.error {
+  margin-bottom: 10px;
+  font-size: 11.5px;
+  color: var(--danger);
+}

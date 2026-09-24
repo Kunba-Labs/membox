@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "membox Dev",
+  "identifier": "com.membox.desktop.dev",
+  "bundle": {
+    "icon": [
+      "../../brand/generated/tauri-dev/32x32.png",
+      "../../brand/generated/tauri-dev/128x128.png",
+      "../../brand/generated/tauri-dev/128x128@2x.png",
+      "../../brand/generated/tauri-dev/icon.icns"
+    ]
+  }
+}

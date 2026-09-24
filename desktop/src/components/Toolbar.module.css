@@ -1,0 +1,196 @@
+/* Only when the sidebar is collapsed: the rail sits over this row. */
+.inset {
+  padding-left: 116px;
+}
+
+.toolbar {
+  height: var(--titlebar-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--rule);
+  -webkit-app-region: drag;
+}
+
+.toolbar > * {
+  -webkit-app-region: no-drag;
+}
+
+.nav {
+  display: flex;
+  gap: 2px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.slider {
+  width: 168px;
+  display: flex;
+  align-items: center;
+}
+
+.slider input {
+  border-radius: var(--r-chip);
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  padding: 0;
+  border: 0;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+}
+
+.slider input::-webkit-slider-thumb {
+  border-radius: var(--r-round);
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  background: var(--text);
+  box-shadow: none;
+}
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 232px;
+}
+
+.search > svg:first-child {
+  position: absolute;
+  left: 9px;
+  color: var(--text-2);
+  pointer-events: none;
+}
+
+.search .caret {
+  position: absolute;
+  left: 26px;
+  color: var(--text-3);
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.search input {
+  height: 30px;
+  padding-left: 44px;
+}
+
+.titleCount {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.textBtn {
+  border-radius: var(--r-chip);
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--danger);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.textBtn:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.sort {
+  border-radius: var(--r-chip);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 6px;
+  color: var(--text-2);
+}
+
+.sort:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.sort select {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  outline: none;
+}
+
+.sort select option {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.clear {
+  border-radius: var(--r-round);
+  position: absolute;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--text-3);
+}
+
+.clear:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.search input {
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+.queue {
+  border-radius: var(--r-round);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: var(--wash);
+}
+
+.queue svg {
+  width: 12px;
+  height: 12px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% { opacity: 0.4; }
+}
+
+.spin {
+  animation: toolbarspin 900ms linear infinite;
+}
+
+@keyframes toolbarspin {
+  to {
+    transform: rotate(360deg);
+  }
+}

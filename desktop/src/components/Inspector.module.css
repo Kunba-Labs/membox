@@ -1,0 +1,453 @@
+.inspector {
+  width: var(--inspector-w);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--rule);
+  background: var(--panel);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.head {
+  height: var(--titlebar-h);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 10px;
+  border-bottom: var(--heading-rule) solid var(--rule);
+  -webkit-app-region: drag;
+}
+
+.head button {
+  -webkit-app-region: no-drag;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* .preview is overflow:hidden, which makes its min-height 0 — once the column
+   overflows, flex would shrink it to nothing. Nothing in here may shrink. */
+.scroll > * {
+  flex: none;
+}
+
+.preview {
+  position: relative;
+  overflow: hidden;
+  background: var(--panel-2);
+  max-height: 210px;
+}
+
+.preview img {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+}
+
+.badge {
+  border-radius: var(--r-chip);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  padding: 2px 6px;
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-track);
+  text-transform: var(--label-case);
+  color: var(--badge-fg);
+  background: var(--badge-bg);
+}
+
+.palette {
+  border-radius: var(--r-round);
+  display: flex;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--panel);
+  align-self: center;
+}
+
+.palette i {
+  border-radius: var(--r-round);
+  width: 15px;
+  height: 15px;
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.urlRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.urlRow input {
+  padding-right: 34px;
+}
+
+.urlRow button {
+  position: absolute;
+  right: 8px;
+  color: var(--text-2);
+}
+
+/* The thread behind a Hacker News save: a row, not a boxed advert. */
+.discussion {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 6px 2px;
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+}
+
+.discussion:hover span {
+  color: var(--accent);
+}
+
+.discussion svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.discussion span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discussion small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  color: var(--label-color);
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-track);
+  text-transform: var(--label-case);
+  margin-top: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 25px;
+  padding: 0 7px 0 9px;
+  font-size: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+}
+
+.chip svg {
+  color: var(--text-3);
+  width: 12px;
+  height: 12px;
+}
+
+.chip:hover svg {
+  color: var(--text);
+}
+
+.chipAdd {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  color: var(--text-2);
+}
+
+.chipAdd:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.folderChip {
+  background: var(--chip-folder-bg);
+  border-color: var(--chip-folder-line);
+  color: var(--chip-folder-fg);
+}
+
+.props {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  row-gap: 7px;
+  column-gap: 8px;
+  font-size: 12px;
+}
+
+.props dt {
+  color: var(--text-2);
+}
+
+.props dd {
+  margin: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  color: var(--star);
+}
+
+.stars svg {
+  width: 13px;
+  height: 13px;
+}
+
+.stars .off {
+  color: var(--text-3);
+}
+
+.divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 2px 0;
+}
+
+.agent {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+  padding: 0;
+}
+
+.agentHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-size: var(--label-size);
+  font-weight: 600;
+  letter-spacing: var(--label-track);
+  text-transform: var(--label-case);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: var(--heading-rule) solid var(--accent);
+}
+
+.agentHead svg {
+  width: 13px;
+  height: 13px;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.multi {
+  margin-right: auto;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.previewText {
+  padding: 14px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-height: 160px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+
+.chip button {
+  border-radius: var(--r-chip);
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+}
+
+.chip button:hover {
+  background: var(--hover);
+}
+
+.chipInput,
+.chipSelect {
+  height: 25px;
+  width: 110px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.chipSelect {
+  width: 170px;
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.stars button {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--star);
+}
+
+.stars button.off {
+  color: var(--text-3);
+}
+
+.stars button:hover {
+  transform: scale(1.2);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  font-size: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--rule);
+}
+
+.btn:hover {
+  background: var(--hover);
+  border-color: var(--text-3);
+}
+
+.btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.danger {
+  color: var(--folder);
+}
+
+.suggest {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  font-size: 12px;
+}
+
+.suggest .btn {
+  flex: none;
+  height: 26px;
+  padding: 0 12px;
+  font-weight: 600;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  border-color: var(--btn-line);
+}
+
+.error {
+  font-size: 11.5px;
+  color: var(--danger);
+  padding: 6px 10px;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.transcript {
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-2);
+  user-select: text;
+  padding: 8px 10px;
+  background: var(--panel);
+}
+
+/* Machine tags (rules or the agent) look provisional until kept — §2.5. */
+.autoChip {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-2);
+}
+
+.autoMark {
+  width: 10px !important;
+  height: 10px !important;
+  color: var(--accent) !important;
+}
+
+.autoChip button:first-of-type {
+  color: var(--accent);
+}
+
+/* A sticky's swatches are choices, so they are buttons and they show which one
+   is current. */
+.palette button {
+  border-radius: var(--r-round);
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.paperOn {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.paperPeek {
+  padding: 12px 14px;
+  max-height: 168px;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-mask-image: linear-gradient(180deg, #000 74%, transparent);
+  mask-image: linear-gradient(180deg, #000 74%, transparent);
+}
+
+.paperPeek a[data-item] {
+  border-radius: var(--r-round);
+  padding: 0 5px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+}

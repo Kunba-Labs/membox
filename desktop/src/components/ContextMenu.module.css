@@ -1,0 +1,40 @@
+.menu,
+.menu.surface {
+  border-radius: var(--r-tile);
+  position: fixed;
+  z-index: 50;
+  min-width: 190px;
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  box-shadow: none;
+  animation: pop var(--fast) var(--ease);
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.97); }
+}
+
+.item {
+  border-radius: var(--r-chip);
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+
+.item:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--rule);
+}

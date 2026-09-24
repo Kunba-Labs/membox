@@ -1,0 +1,13 @@
+.DS_Store
+desktop/src-tauri/gen/
+desktop/src-tauri/target/
+dist/
+ios/*.entitlements
+ios/*.plist
+ios/Assets.xcassets/
+ios/build-device/
+ios/build/
+ios/Generated/
+ios/Membox.xcodeproj/
+node_modules/
+target/

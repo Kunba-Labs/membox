@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# membox backup — a snapshot of the library (SQLite + blobs) you can restore
+# with bin/restore. Safe while the app is running: sqlite3 .backup takes a
+# consistent copy, and blobs are content-addressed so new ones only ever appear.
+#
+#   bin/backup              # daily identity  (com.membox.desktop)
+#   bin/backup --dev        # play identity   (com.membox.desktop.dev)
+#   MEMBOX_KEEP=30 bin/backup
+#
+# ponytail: `cp -c` clones on APFS, so a 200MB blob store costs ~nothing per
+# backup and stays browsable. Falls back to a real copy on a non-APFS volume.
+set -euo pipefail
+
+id="com.membox.desktop"
+[[ "${1:-}" == "--dev" ]] && id="com.membox.desktop.dev"
+keep=${MEMBOX_KEEP:-10}
+
+src="$HOME/Library/Application Support/$id"
+root="$HOME/Library/Application Support/membox-backups/$id"
+[[ -f "$src/membox.db" ]] || { echo "no library at $src" >&2; exit 1; }
+
+out="$root/$(date +%Y%m%d-%H%M%S)"
+rm -rf "$out"   # same second twice: replace, never merge
+mkdir -p "$out"
+sqlite3 "$src/membox.db" ".backup '$out/membox.db'"
+if [[ -d "$src/blobs" ]]; then
+  cp -Rc "$src/blobs" "$out/blobs" 2>/dev/null || cp -R "$src/blobs" "$out/blobs"
+fi
+
+# Keep the last $keep, drop the rest.
+gone=$(ls -1d "$root"/*/ 2>/dev/null | sort -r | tail -n +$((keep + 1)) || true)
+[[ -n "$gone" ]] && echo "$gone" | tr '\n' '\0' | xargs -0 rm -rf
+
+echo "backed up $id → $out ($(du -sh "$out" | cut -f1), $(ls -1d "$root"/*/ | wc -l | tr -d ' ') kept)"

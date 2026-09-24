@@ -1,0 +1,27 @@
+[package]
+name = "membox"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+license = "GPL-3.0-or-later"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+membox-core = { path = "../../core" }
+tauri-plugin-window-state = "2"
+tauri = { version = "2", features = ["macos-private-api", "protocol-asset"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+url = "2"
+
+# The hidden WebviewWindow is a WKWebView; snapshot + evaluateJavaScript go
+# straight to it. These crates are already in the tree via wry.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSData", "NSError", "NSDictionary", "NSValue", "NSObject"] }
+objc2-app-kit = { version = "0.3", features = ["NSImage", "NSImageRep", "NSBitmapImageRep", "NSGraphics", "NSWindow", "NSResponder"] }
+objc2-web-kit = { version = "0.3", features = ["WKWebView", "WKSnapshotConfiguration", "block2"] }
