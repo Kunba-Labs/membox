@@ -42,10 +42,10 @@ bin/release-secrets                  # once: push signing/notarizing secrets to 
 on a GitHub macOS runner: tag `v$(bin/version)`, universal build, Developer ID
 signed + notarized, published with `latest.json`. Running copies poll
 `releases/latest/download/latest.json` every 30 min (`updater.rs`) and show an
-Update button in the sidebar. Only builds made with `tauri.release.conf.json`
-carry the updater — `yarn install:app` and `bin/dev` builds never self-update.
-The updater key is `~/.membox-updater-key` (back it up: lose it and every
-installed copy is stranded). A version bump beyond patch = edit `tauri.conf.json`.
+Update button in the sidebar. `yarn install:app` builds the same prod config
+(version from `bin/version`), so a later release updates it in place; the Dev
+identity never self-updates. The updater key is `~/Desktop/membox-updater-key`
+(back it up: lose it and every installed copy is stranded). A version bump beyond patch = edit `tauri.conf.json`.
 
 Data: `~/Library/Application Support/com.membox.desktop[.dev]/` — `membox.db`,
 `blobs/`, `scratch/<item>/` (what each agent run saw/wrote), `mcp.json`

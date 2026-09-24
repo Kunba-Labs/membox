@@ -3,7 +3,7 @@
 # running copy's updater polls (tauri.release.conf.json, updater.rs).
 #
 # Secrets (repo Settings → Secrets → Actions; bin/release-secrets sets them all):
-#   TAURI_SIGNING_PRIVATE_KEY[_PASSWORD]  ~/.membox-updater-key — losing it strands every install
+#   TAURI_SIGNING_PRIVATE_KEY[_PASSWORD]  ~/Desktop/membox-updater-key — losing it strands every install
 #   APPLE_CERTIFICATE[_PASSWORD]          Developer ID .p12, base64
 #   APPLE_SIGNING_IDENTITY                "Developer ID Application: … (KF53B4S5HD)"
 #   APPLE_API_KEY / APPLE_API_ISSUER / APPLE_API_KEY_P8   App Store Connect key, for notarizing

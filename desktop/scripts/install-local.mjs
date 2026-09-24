@@ -83,6 +83,13 @@ try {
 log(`building ${plan.appName} (${plan.identifier})${signingIdentity === '-' ? ' [ad-hoc]' : ` signed: ${signingIdentity}`}`);
 const args = ['tauri', 'build', '--bundles', 'app'];
 if (plan.configArg) args.push('-c', plan.configArg);
+// The daily app is the prod build: same updater config and version scheme as a
+// CI release, so the next release updates it in place. It skips the updater
+// artifacts — only CI signs those, and they need the key.
+if (!isDev) {
+  const version = execFileSync(resolve(DESKTOP_DIR, '../bin/version'), { encoding: 'utf8' }).trim();
+  args.push('-c', 'src-tauri/tauri.release.conf.json', '--config', JSON.stringify({ version, bundle: { createUpdaterArtifacts: false } }));
+}
 execFileSync('yarn', args, { stdio: 'inherit', cwd: DESKTOP_DIR, env: { ...process.env, APPLE_SIGNING_IDENTITY: signingIdentity } });
 
 const built = join(BUNDLE_MACOS, plan.appName);
