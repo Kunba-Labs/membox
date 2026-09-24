@@ -8,6 +8,14 @@ by searching or asking.
 
 Think [Eagle](https://eagle.cool), but you never file anything yourself.
 
+![membox in the default Bauhaus look: a grid of saved pages, a video and a repo, with the inspector showing tags, folder and summary](docs/screenshots/bauhaus.jpg)
+
+<details>
+<summary>The same library in the Glass look</summary>
+
+![membox in the Glass look](docs/screenshots/glass.jpg)
+</details>
+
 - **Capture is manual.** ⌘V, drag and drop, the iOS share sheet, or MCP. No clipboard watching.
 - **Everything stays on your Mac.** SQLite + FTS5 in your Library folder. No membox server, account or telemetry.
 - **Bring your own agent.** Claude Code, Codex, Gemini CLI, OpenCode or a local Ollama model — or none.
@@ -15,10 +23,10 @@ Think [Eagle](https://eagle.cool), but you never file anything yourself.
 
 ## Install
 
-Download the `.dmg` from [Releases](../../releases), drag membox to
-Applications. A build without a Developer ID signature is ad-hoc signed; the
-first time, right-click → Open, or run
-`xattr -dr com.apple.quarantine /Applications/membox.app`.
+Download the `.dmg` from the [latest release](../../releases/latest) and drag
+membox to Applications. Releases are Developer ID signed and notarized, and
+every push to `main` is one: the app checks for a new version every half hour
+and offers **Update** in the sidebar.
 
 Optional, for richer captures:
 
@@ -53,7 +61,7 @@ core/      Rust — SQLite + FTS5 store, capture, enrichment queue, agent adapte
 desktop/   Tauri v2 + React 19. A hidden second window is the embedded browser.
 ios/       SwiftUI over the core via UniFFI, share extension.
 brand/     Icon master + bin/icons → every derived set.
-bin/       dev · backup · restore · icons · mock-thumbs
+bin/       dev · backup · restore · icons · mock-thumbs · version · release-secrets
 docs/      Feature-Spec.md — the full spec.
 ```
 
