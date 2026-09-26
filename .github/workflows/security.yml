@@ -1,0 +1,37 @@
+# No container images are built here, so this is a filesystem scan instead:
+# dependency vulnerabilities in Cargo.lock / yarn.lock plus secret scanning,
+# and a CycloneDX SBOM artifact.
+name: security
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Trivy vulnerability + secret scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+          skip-dirs: target,node_modules
+
+      - name: SBOM (CycloneDX)
+        if: always()
+        run: trivy fs --format cyclonedx --output sbom.cdx.json --skip-dirs target,node_modules .
+
+      - uses: actions/upload-artifact@v7.0.1
+        if: always()
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          retention-days: 365
