@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Archive, sign, export and upload membox (iPhone + iPad) to TestFlight.
+# inbox2's bin/ios-release, less its MediaPipe plist patching.
+#
+#   bin/ios-release                 # archive + export a signed .ipa
+#   bin/ios-release --upload        # …then upload to App Store Connect (TestFlight)
+#   bin/ios-release --xcframework   # rebuild the Rust core first (after core changes)
+#
+# Signing and upload both use the App Store Connect API key, the one inbox2
+# uses: ~/.appstoreconnect/private_keys/AuthKey_<ASC_KEY_ID>.p8. Build numbers
+# stay unique per upload through ExportOptions' manageAppVersionAndBuildNumber.
+# ios/deploy-device.sh is still the quick way onto a paired device.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+IOS="$ROOT/ios"
+OUT="$IOS/build/release"
+ARCHIVE="$OUT/Membox.xcarchive"
+ASC_KEY_ID="${ASC_KEY_ID:-H9PLG58DB9}"
+ASC_ISSUER_ID="${ASC_ISSUER_ID:-d5f5385b-5e34-4d70-925d-0debd3a3e090}"
+
+UPLOAD=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --upload)      UPLOAD=1 ;;
+    --xcframework) "$IOS/bootstrap.sh" ;;
+    -h|--help)     sed -n '2,13p' "$0"; exit 0 ;;
+    *) echo "unknown arg: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+P8="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+[ -f "$P8" ] || { echo "✗ API key not found at $P8" >&2; exit 1; }
+[ -d "$ROOT/target/MemboxCore.xcframework" ] || { echo "✗ no xcframework — run with --xcframework" >&2; exit 1; }
+AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$P8"
+  -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+
+(cd "$IOS" && xcodegen generate >/dev/null)
+
+echo "▸ archiving"
+rm -rf "$ARCHIVE" "$OUT/export"
+xcodebuild -project "$IOS/Membox.xcodeproj" -scheme Membox -configuration Release \
+  -destination 'generic/platform=iOS' -archivePath "$ARCHIVE" "${AUTH[@]}" \
+  archive -quiet
+
+echo "▸ exporting"
+xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$IOS/ExportOptions.plist" \
+  -exportPath "$OUT/export" "${AUTH[@]}" -quiet
+IPA=$(ls "$OUT"/export/*.ipa | head -1)
+echo "✓ $IPA"
+
+if [ "$UPLOAD" = 1 ]; then
+  echo "▸ uploading to App Store Connect"
+  xcrun altool --upload-app -f "$IPA" --type ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+  echo "✓ uploaded — in TestFlight once App Store Connect has processed it"
+fi

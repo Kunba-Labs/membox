@@ -8,7 +8,6 @@ struct LibraryView: View {
     }
 
     @EnvironmentObject var store: Store
-    @State private var showSync = false
     @State private var showQueue = false
 
     var body: some View {
@@ -45,20 +44,7 @@ struct LibraryView: View {
             .navigationDestination(for: Selection.self) { GridView(selection: $0) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Toggle("Sync through iCloud", isOn: Binding(
-                            get: { store.settings.syncEnabled },
-                            set: { store.dispatch("settings", ["syncEnabled": $0]); if $0 { store.syncNow() } }))
-                        Button("Sync now") { store.syncNow() }.disabled(!store.settings.syncEnabled)
-                        Button("Sync status…") { showSync = true }
-                        Divider()
-                        Picker("Look", selection: Binding(
-                            get: { store.settings.theme },
-                            set: { store.dispatch("settings", ["theme": $0]) })) {
-                            Text("Bauhaus").tag("bauhaus")
-                            Text("Glass").tag("glass")
-                        }
-                    } label: { Label("More", systemImage: "ellipsis.circle") }
+                    MoreMenu()
                     .tint(Theme.accent)
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -75,7 +61,6 @@ struct LibraryView: View {
                 }
             }
             .tint(Theme.accent)
-            .sheet(isPresented: $showSync) { SyncSheet().environmentObject(store) }
             .sheet(isPresented: $showQueue) { QueueSheet().environmentObject(store) }
             .captureButtons()
         }
@@ -117,6 +102,32 @@ struct LibraryView: View {
     }
 }
 
+
+/// Sync and the look — the phone's ⋯ and the iPad sidebar's gear.
+struct MoreMenu: View {
+    @EnvironmentObject var store: Store
+    @State private var showSync = false
+    var icon = "ellipsis.circle"
+
+    var body: some View {
+        Menu {
+            Toggle("Sync through iCloud", isOn: Binding(
+                get: { store.settings.syncEnabled },
+                set: { store.dispatch("settings", ["syncEnabled": $0]); if $0 { store.syncNow() } }))
+            Button("Sync now") { store.syncNow() }.disabled(!store.settings.syncEnabled)
+            Button("Sync status…") { showSync = true }
+            Divider()
+            Picker("Look", selection: Binding(
+                get: { store.settings.theme },
+                set: { store.dispatch("settings", ["theme": $0]) })) {
+                Text("Bauhaus").tag("bauhaus")
+                Text("Glass").tag("glass")
+            }
+        } label: { Label("More", systemImage: icon) }
+        .tint(Theme.accent)
+        .sheet(isPresented: $showSync) { SyncSheet().environmentObject(store) }
+    }
+}
 
 /// Inset and rounded under Glass; full-bleed and ruled under Bauhaus.
 struct ListLook: ViewModifier {

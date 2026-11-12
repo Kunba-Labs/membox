@@ -28,26 +28,10 @@ struct GridView: View {
                     Text("Nothing here yet — share a link to membox, or tap Paste.").foregroundStyle(Theme.text3).font(.footnote).multilineTextAlignment(.center)
                 }.padding()
             } else {
-                GeometryReader { geo in
-                    // Round-robin columns, not a LazyVGrid: a grid row is as
-                    // tall as its tallest tile, which squares every preview off
-                    // and loses the desktop's waterfall — §6.3.
-                    let cols = max(2, Int((geo.size.width - 24) / 190))
-                    ScrollView {
-                        HStack(alignment: .top, spacing: 10) {
-                            ForEach(Array(0..<cols), id: \.self) { c in
-                                LazyVStack(spacing: 10) {
-                                    ForEach(items.enumerated().filter { $0.offset % cols == c }.map(\.element)) { item in
-                                        NavigationLink(value: item) { Tile(item: item) }
-                                            .buttonStyle(.plain)
-                                            .contextMenu { menu(for: item) }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .padding(12)
-                    }
+                Masonry(items: items, column: 190) { item in
+                    NavigationLink(value: item) { Tile(item: item) }
+                        .buttonStyle(.plain)
+                        .contextMenu { TileMenu(item: item) }
                 }
             }
         }
@@ -69,11 +53,16 @@ struct GridView: View {
             Text("This cannot be undone.")
         }
     }
+}
 
-    /// Long-press a tile to get rid of it — the one thing the phone could not
-    /// do. Trash is reversible and syncs as a flag; forever is a tombstone the
-    /// other devices honour (§7.4).
-    @ViewBuilder private func menu(for item: Item) -> some View {
+/// Long-press a tile to get rid of it — the one thing the phone could not
+/// do. Trash is reversible and syncs as a flag; forever is a tombstone the
+/// other devices honour (§7.4).
+struct TileMenu: View {
+    let item: Item
+    @EnvironmentObject var store: Store
+
+    var body: some View {
         if item.trashed {
             Button { store.dispatch("trash", ["ids": [item.id], "trashed": false]) } label: {
                 Label("Put back", systemImage: "arrow.uturn.backward")
@@ -89,9 +78,61 @@ struct GridView: View {
     }
 }
 
+/// Round-robin columns, not a LazyVGrid: a grid row is as tall as its
+/// tallest tile, which squares every preview off and loses the desktop's
+/// waterfall — §6.3. `column` is the target tile width.
+struct Masonry<T: View>: View {
+    let items: [Item]
+    let column: CGFloat
+    @ViewBuilder let tile: (Item) -> T
+
+    var body: some View {
+        GeometryReader { geo in
+            let cols = max(2, Int((geo.size.width - 24) / column))
+            ScrollView {
+                HStack(alignment: .top, spacing: 10) {
+                    ForEach(Array(0..<cols), id: \.self) { c in
+                        LazyVStack(spacing: 10) {
+                            ForEach(items.enumerated().filter { $0.offset % cols == c }.map(\.element)) { tile($0) }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(12)
+            }
+        }
+    }
+}
+
+/// Grid.module.css .scrollShot: the whole page, width-fitted, slides up over
+/// 4s until its foot reaches the frame's — top:-140% on the Mac, where every
+/// page shot is 1:3. A page barely taller than the frame barely moves.
+/// ponytail: decodes the page shot on the main thread when the pan starts, as
+/// the Mac does on hover; a background decode if large shots stutter.
+struct PanShot: View {
+    let image: UIImage
+    @State private var down = false
+    @Environment(\.accessibilityReduceMotion) private var still
+
+    var body: some View {
+        GeometryReader { g in
+            let h = g.size.width * image.size.height / max(1, image.size.width)
+            Image(uiImage: image).resizable()
+                .frame(width: g.size.width, height: h)
+                .offset(y: down && !still ? -max(0, h - g.size.height) : 0)
+                .animation(.linear(duration: 4), value: down)
+        }
+        .clipped()
+        .onAppear { down = true }
+    }
+}
+
 struct Tile: View {
     let item: Item
+    /// Selected on the iPad: plays the page pan a finger cannot hover for.
+    var active = false
     @EnvironmentObject var store: Store
+    @State private var hovering = false
 
     /// A link whose screenshot hasn't landed yet — desktop Grid.jsx.
     private var isPlaceholder: Bool {
@@ -225,8 +266,15 @@ struct Tile: View {
                 .mask(LinearGradient(colors: [.black, .black, .clear], startPoint: .top, endPoint: .bottom))
         } else if pageFrame, let ui = image(item.thumb ?? item.pageShot) {
             // One fixed 4:5 frame for pages, like the desktop's — §4.5. The
-            // phone has no hover, so it stays on the viewport shot.
+            // full-page shot pans in under a trackpad pointer, or on the tile
+            // selected on the iPad; the phone stays on the viewport shot.
             shot(ui, ratio: 4.0 / 5.0)
+                .overlay {
+                    if hovering || active, let full = image(item.pageShot) {
+                        PanShot(image: full).transition(.opacity.animation(.easeOut(duration: 0.25)))
+                    }
+                }
+                .onHover { hovering = $0 }
         } else if let ui = image(item.thumb ?? item.pageShot) {
             // Everything else keeps its own shape: posters stay tall, video
             // stills stay wide. That variety is what makes the column read.

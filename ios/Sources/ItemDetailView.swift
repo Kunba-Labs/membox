@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ItemDetailView: View {
     let id: String
+    /// The iPad inspector shows the viewport shot, as the Mac's does; the
+    /// phone's full-screen detail has room for the whole page.
+    var wholePage = true
     @EnvironmentObject var store: Store
     @State private var newTag = ""
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +25,7 @@ struct ItemDetailView: View {
             if let item {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        if let url = store.blobURL(item.pageShot ?? item.thumb), let ui = UIImage(contentsOfFile: url.path) {
+                        if let url = store.blobURL(wholePage ? item.pageShot ?? item.thumb : item.thumb ?? item.pageShot), let ui = UIImage(contentsOfFile: url.path) {
                             Image(uiImage: ui).resizable().scaledToFit()
                                 .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                         }

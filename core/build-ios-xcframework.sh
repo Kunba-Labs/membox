@@ -7,6 +7,8 @@
 set -euo pipefail
 cd "$(dirname "$0")" # core/
 [ -x "$HOME/.cargo/bin/rustup" ] && export PATH="$HOME/.cargo/bin:$PATH"
+# C deps (sqlite, blake3) build for the SDK version unless told; match project.yml.
+export IPHONEOS_DEPLOYMENT_TARGET=17.0
 
 FEAT="--features mobile-ffi"
 T="../target"

@@ -31,6 +31,7 @@ cargo test -p membox-core            # core tests (the ones that matter)
 cd desktop && node --test src/capture.test.js
 ios/bootstrap.sh && ios/build.sh     # xcframework + xcodegen; simulator "iPhone 17 Pro"
 ios/deploy-device.sh [--xcframework] # signed build → paired iPhone over the air (team KF53B4S5HD)
+bin/ios-release --upload [--xcframework] # archive → TestFlight (iPhone + iPad), ASC API key
 bin/backup [--dev]                    # snapshot library → membox-backups/<id>/<stamp>/, keep 10
 bin/restore [--dev] [dir]            # put one back (app must be quit; old library kept aside)
 bin/icons · bin/mock-thumbs
@@ -114,6 +115,10 @@ Data: `~/Library/Application Support/com.membox.desktop[.dev]/` — `membox.db`,
   `read_dir` sees no `.json` and imports nothing. `CloudSync.pull` calls
   `startDownloadingUbiquitousItem` and waits before every sync; thumbs are
   materialised after, in the background.
+- **The iPad is the Mac's layout, the phone's engine**: `DeskView` (sidebar ·
+  masonry · inspector, tokens.css widths) at regular width on an iPad, the
+  phone's `LibraryView` stack everywhere else, including a narrow Split View.
+  A viewer like the phone; the page pan plays on trackpad hover or selection.
 - **The phone is a viewer** (§7.3): `MemboxCore.open(browser: nil)`. It had an
   offscreen WKWebView; building it in `Store.init` trapped —
   `EXC_BREAKPOINT __DISPATCH_WAIT_FOR_QUEUE__` — because a `@MainActor`

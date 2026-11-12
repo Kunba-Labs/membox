@@ -3,8 +3,8 @@
 #
 # `devicectl` talks to the phone over the network once it has been paired
 # (Xcode › Devices, "Connect via network"), so nothing has to be plugged in —
-# the phone shows up as <name>.coredevice.local. This is the only way membox
-# reaches a device; there is no TestFlight lane, on purpose (§7).
+# the phone shows up as <name>.coredevice.local. The quick lane for a paired
+# device; bin/ios-release --upload is TestFlight (iPhone and iPad).
 #
 #   ./deploy-device.sh                  # first paired iPhone
 #   ./deploy-device.sh --xcframework    # rebuild the Rust core first (core changes)

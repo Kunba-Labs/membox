@@ -17,7 +17,13 @@ action names as the desktop.
 - `ShareExtension/` — "Add to membox" in the share sheet, into the same
   library in the App Group container.
 
-The phone is a viewer: it opens the core with no browser, so a link captured
+- `Sources/DeskView.swift` — the iPad at full width: the Mac's sidebar, grid
+  and inspector. A narrow Split View falls back to the phone's stack.
+
+`../bin/ios-release --upload` puts a build on TestFlight (iPhone and iPad);
+`./deploy-device.sh` is the quick lane to a paired device.
+
+The phone (and the iPad) is a viewer: it opens the core with no browser, so a link captured
 there waits for the Mac to fetch, screenshot and file it.
 
 Signing uses `DEVELOPMENT_TEAM` in `project.yml` — set it to your own Apple

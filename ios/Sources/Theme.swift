@@ -32,6 +32,10 @@ enum Theme {
     static var text2: Color { glass ? Color(hex: 0x8A93A3) : Color(hex: 0x98979F) }
     static var text3: Color { glass ? Color(hex: 0x5A6272) : Color(hex: 0x66656D) }
 
+    /// The sidebar's current row — tokens.css --row-current-bg/fg.
+    static var rowCurrent: Color { glass ? panel2 : accent }
+    static var rowCurrentInk: Color { glass ? text : onAccent }
+
     /// Shape and softness — the other half of the difference.
     static var radius: CGFloat { glass ? 10 : 0 }
     static var chipRadius: CGFloat { glass ? 8 : 0 }
