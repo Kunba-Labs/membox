@@ -31,6 +31,10 @@ struct DeskView: View {
         }
         .background(Theme.backdrop)
         .onChange(of: selection) { focus = nil; query = "" }
+        // Trashed, deleted or filed elsewhere: the inspector lets go with it.
+        .onChange(of: store.items) {
+            if let f = focus, !store.items(in: selection, query: "").contains(where: { $0.id == f }) { focus = nil }
+        }
         .sheet(isPresented: $showQueue) { QueueSheet().environmentObject(store) }
     }
 
@@ -67,14 +71,19 @@ struct DeskView: View {
                 Text("Nothing here yet — share a link to membox, or tap Paste.")
                     .foregroundStyle(Theme.text3).font(.footnote)
             } else {
-                Masonry(items: items, column: size) { item in
-                    Tile(item: item, active: focus == item.id)
-                        // --accent selects, at full strength — Grid.module.css.
-                        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                            .strokeBorder(Theme.accent, lineWidth: 2).opacity(focus == item.id ? 1 : 0))
-                        .contentShape(Rectangle())
-                        .onTapGesture { focus = item.id; inspector = true }
-                        .contextMenu { TileMenu(item: item) }
+                // One column is allowed here: an iPad held upright with both
+                // panes open leaves the grid under 300pt.
+                Masonry(items: items, column: size, minColumns: 1) { item in
+                    Button { focus = item.id; inspector = true } label: {
+                        Tile(item: item, active: focus == item.id)
+                            // --accent selects, at full strength — Grid.module.css.
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
+                                .strokeBorder(Theme.accent, lineWidth: 2).opacity(focus == item.id ? 1 : 0))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(item.kindLabel), \(item.title)")
+                    .accessibilityAddTraits(focus == item.id ? .isSelected : [])
+                    .contextMenu { TileMenu(item: item) }
                 }
             }
         }
@@ -93,7 +102,7 @@ struct DeskView: View {
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Slider(value: $size, in: 150...420).frame(width: 120).accessibilityLabel("Tile size")
-                if case .trash = selection, !items.isEmpty {
+                if case .trash = selection, store.count(.trash) > 0 {
                     Button("Empty Trash", role: .destructive) { confirmEmpty = true }
                 }
                 Menu {
@@ -166,7 +175,7 @@ struct DeskSidebar: View {
                 if proposed { Label3("suggested", color: on ? Theme.rowCurrentInk : Theme.accent) }
                 Spacer(minLength: 0)
                 Text("\(store.count(sel))").font(.system(size: 12)).monospacedDigit()
-                    .foregroundStyle(on && Theme.look == .bauhaus ? Theme.star : Theme.text3)
+                    .foregroundStyle(on ? Theme.star : Theme.text3)
             }
             .padding(.leading, indent ? 26 : 8).padding(.trailing, 8)
             .frame(height: 30)

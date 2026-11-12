@@ -84,11 +84,12 @@ struct TileMenu: View {
 struct Masonry<T: View>: View {
     let items: [Item]
     let column: CGFloat
+    var minColumns = 2
     @ViewBuilder let tile: (Item) -> T
 
     var body: some View {
         GeometryReader { geo in
-            let cols = max(2, Int((geo.size.width - 24) / column))
+            let cols = max(minColumns, Int((geo.size.width - 24) / column))
             ScrollView {
                 HStack(alignment: .top, spacing: 10) {
                     ForEach(Array(0..<cols), id: \.self) { c in
