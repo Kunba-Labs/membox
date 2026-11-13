@@ -38,6 +38,10 @@ pub struct SyncStatus {
     pub devices: usize,
     pub imported: usize,
     pub error: Option<String>,
+    /// Rows of the other devices' snapshots merged so far, of how many — the
+    /// progress bar. `total` is 0 when no merge is running.
+    pub done: usize,
+    pub total: usize,
 }
 
 /// Where the Mac's copy lives. Prefer the app's own iCloud container (what
@@ -131,17 +135,24 @@ impl Library {
             Ok(e) => e,
             Err(_) => return Ok(0), // nothing synced yet
         };
-        for entry in entries.filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.extension().map(|x| x != "json").unwrap_or(true) || path.file_stem().map(|s| s == me.as_str()).unwrap_or(false) {
-                continue;
-            }
-            let Ok(raw) = std::fs::read(&path) else { continue };
-            let Ok(file) = serde_json::from_slice::<DeviceFile>(&raw) else { continue };
+        // Read every file first, so the bar knows its length before it moves.
+        let files: Vec<DeviceFile> = entries
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().map(|x| x == "json").unwrap_or(false) && p.file_stem().map(|s| s != me.as_str()).unwrap_or(false))
+            .filter_map(|p| serde_json::from_slice::<DeviceFile>(&std::fs::read(&p).ok()?).ok())
+            .collect();
+        {
+            let mut st = self.sync_status.lock();
+            st.done = 0;
+            st.total = files.iter().map(|f| f.items.len()).sum();
+        }
+        for file in &files {
             seen += 1;
-            changed += self.merge(&file, &dir.join("blobs"))?;
+            changed += self.merge(file, &dir.join("blobs"))?;
         }
         let mut st = self.sync_status.lock();
+        st.total = 0;
         st.dir = Some(dir.display().to_string());
         st.last_import = Some(crate::model::now());
         st.devices = seen;
@@ -164,6 +175,24 @@ impl Library {
             }
         }
         for it in &file.items {
+            self.sync_status.lock().done += 1;
+            // One row that will not write is that row's problem, not the
+            // library's: a `?` here used to end the merge on the first bad
+            // item and leave every row after it on the other device.
+            match self.merge_item(it, blobs) {
+                Ok(true) => n += 1,
+                Ok(false) => {}
+                Err(e) => {
+                    log::warn!("sync: {} not merged: {e}", it.id);
+                    self.sync_status.lock().error = Some(format!("{}: {e}", it.id));
+                }
+            }
+        }
+        Ok(n)
+    }
+
+    fn merge_item(&self, it: &crate::model::Item, blobs: &Path) -> Result<bool, String> {
+        {
             let local = self.db.lock().get_item_for_sync(&it.id).map_err(|e| e.to_string())?;
             // Whether the bytes are here is not a function of the row's
             // version. iCloud hands a phone the snapshot first and the blob
@@ -191,17 +220,17 @@ impl Library {
                     log::info!("sync: taking over {} ({})", row.id, row.status);
                     self.queue_fetch(&row.id);
                 }
-                n += 1;
+                return Ok(true);
             } else if let Some(mut row) = local.filter(|l| l.thumb.is_none() && thumb.is_some()) {
                 // The row is ours or a tie — only the picture was missing, so
                 // fill that in and leave every other column alone. Overwriting
                 // with `it` here would undo a newer edit made on this device.
                 row.thumb = thumb;
                 self.db.lock().upsert_item_for_sync(&row).map_err(|e| e.to_string())?;
-                n += 1;
+                return Ok(true);
             }
         }
-        Ok(n)
+        Ok(false)
     }
 
     /// Make `rel` local if it is not already; true when the bytes are here.
@@ -211,7 +240,7 @@ impl Library {
             return true;
         }
         let src = blobs.join(rel);
-        if !src.exists() {
+        if !src.exists() || dataless(&src) {
             return false;
         }
         if let Some(parent) = dst.parent() {
@@ -219,6 +248,25 @@ impl Library {
         }
         std::fs::copy(&src, &dst).is_ok()
     }
+}
+
+/// A file iCloud has listed but not downloaded. Copying one blocks until the
+/// download finishes — a merge that copied each thumb as it went sat for
+/// minutes on the first item of a fresh iPad. The row lands now; the app asks
+/// iCloud for the pictures and a later pass picks them up (`merge_item`'s
+/// thumb-only branch).
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+fn dataless(p: &Path) -> bool {
+    #[cfg(target_os = "ios")]
+    use std::os::ios::fs::MetadataExt;
+    #[cfg(target_os = "macos")]
+    use std::os::macos::fs::MetadataExt;
+    const SF_DATALESS: u32 = 0x4000_0000;
+    std::fs::symlink_metadata(p).map(|m| m.st_flags() & SF_DATALESS != 0).unwrap_or(false)
+}
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn dataless(_: &Path) -> bool {
+    false
 }
 
 #[cfg(test)]
@@ -266,6 +314,9 @@ mod tests {
         a.sync_export().unwrap();
         assert_eq!(b.sync_import().unwrap(), 1);
         assert_eq!(b.db.lock().get_item(&id).unwrap().unwrap().title, "a note from A");
+        // The bar ran to the end and put itself away.
+        let st = b.sync_status.lock().clone();
+        assert_eq!((st.done, st.total), (1, 0));
 
         // B edits later, A takes B's version.
         std::thread::sleep(std::time::Duration::from_millis(5));

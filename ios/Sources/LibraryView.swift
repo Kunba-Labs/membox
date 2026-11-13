@@ -21,6 +21,9 @@ struct LibraryView: View {
                     }
                 }
                 List {
+                    if store.progress != nil {
+                        Section { SyncBar().listRowInsets(EdgeInsets()) }.listRowBackground(Theme.panel)
+                    }
                     Section {
                         row(.all, "All", "tray")
                         row(.uncategorized, "Uncategorized", "folder.badge.questionmark")
@@ -144,11 +147,13 @@ struct ListLook: ViewModifier {
 struct SyncSheet: View {
     @EnvironmentObject var store: Store
     @Environment(\.dismiss) private var dismiss
-    @State private var busy = false
 
     var body: some View {
         NavigationStack {
             List {
+                if store.progress != nil {
+                    Section { SyncBar().listRowInsets(EdgeInsets()) }
+                }
                 Section("This device") {
                     line("Sync", store.settings.syncEnabled ? "on" : "off")
                     line("Items here", "\(store.items.filter { !$0.trashed }.count)")
@@ -167,13 +172,8 @@ struct SyncSheet: View {
                         .font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.text3)
                 }
                 Section {
-                    Button {
-                        busy = true
-                        store.syncNow()
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { busy = false }
-                    } label: {
-                        HStack { Text("Sync now"); Spacer(); if busy { ProgressView().controlSize(.mini) } }
-                    }
+                    Button("Sync now") { store.syncNow() }
+                        .disabled(store.progress != nil)
                 }
             }
             .navigationTitle("Sync")
@@ -341,6 +341,31 @@ struct QueueSheet: View {
         case "enriching": return "reading it…"
         case "queued": return "queued for the agent"
         default: return it.error ?? "waiting for your Mac"
+        }
+    }
+}
+
+/// The sync, on screen: the stage in words and a bar when there is something
+/// to count. Nothing at all when idle.
+struct SyncBar: View {
+    @EnvironmentObject var store: Store
+
+    var body: some View {
+        if let p = store.progress {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "icloud.and.arrow.down").foregroundStyle(Theme.accent)
+                    Text(p.phase).lineLimit(1).foregroundStyle(Theme.text2)
+                }
+                .font(.system(size: 11.5))
+                if let f = p.fraction {
+                    ProgressView(value: f).tint(Theme.accent)
+                } else {
+                    ProgressView().progressViewStyle(.linear).tint(Theme.accent)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .accessibilityElement(children: .combine)
         }
     }
 }

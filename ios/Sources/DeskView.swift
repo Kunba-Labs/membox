@@ -160,6 +160,11 @@ struct DeskSidebar: View {
                 }
                 .padding(.horizontal, 8).padding(.bottom, 8)
             }
+            // The Mac's sidebar footer, holding what the iPad is waiting on.
+            if store.progress != nil {
+                Theme.rule.frame(height: 1)
+                SyncBar()
+            }
         }
         .background(Color.black.opacity(0.14))
     }

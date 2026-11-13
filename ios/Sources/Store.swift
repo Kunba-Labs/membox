@@ -65,6 +65,7 @@ final class Store: ObservableObject {
     }
 
     @Published var syncStatus = SyncStatus()
+    @Published var progress: SyncProgress?
 
     /// Pull the other devices' files down first — iCloud gives a phone
     /// placeholders until something asks — then merge, then fetch the thumbs
@@ -77,17 +78,53 @@ final class Store: ObservableObject {
     /// back into `Task { @MainActor }` to call it froze the app on every
     /// foreground and got it killed with 0x8BADF00D. Only the status read,
     /// which is a mutex clone, returns to main.
+    ///
+    /// Each stage says what it is doing through `progress` — "is it syncing?"
+    /// used to have no answer on screen at all. One sync at a time: the
+    /// foreground hop and the first-run setup both ask, and two merges of the
+    /// same files only race each other.
     func syncNow() {
-        guard let core else { return }
+        guard let core, progress == nil else { return }
         let dir = settings.syncDir.map { URL(fileURLWithPath: $0) }
+        progress = SyncProgress(phase: "Checking iCloud…")
+        let say: @Sendable (String, Double?) -> Void = { phase, f in
+            Task { @MainActor [weak self] in self?.progress = SyncProgress(phase: phase, fraction: f) }
+        }
+        // The merge counts its rows in the core; read them while it runs.
+        let poll = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.progress != nil else { return }
+                self.readSyncStatus()
+                let s = self.syncStatus
+                if s.total > 0 { self.progress = SyncProgress(phase: "Merging \(s.done) of \(s.total)", fraction: Double(s.done) / Double(s.total)) }
+            }
+        }
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             if let dir {
-                CloudSync.pull(dir.appendingPathComponent("devices"))
+                CloudSync.pull(dir.appendingPathComponent("devices")) { say("Downloading the other devices' lists — \($0) left", nil) }
             }
             _ = try? core.dispatch(action: "sync", argsJson: "{}")
-            Task { @MainActor in self?.readSyncStatus() }
+            Task { @MainActor in poll.invalidate() }
+            // Pictures come after the rows, so the library is there to look at
+            // while they download. ponytail: re-walks blobs/ every 2s; fine for
+            // thousands of files, a metadata query if it gets to be millions.
             if let dir {
-                CloudSync.materialise(dir.appendingPathComponent("blobs"), deep: true)
+                let blobs = dir.appendingPathComponent("blobs")
+                var left = CloudSync.materialise(blobs, deep: true)
+                let start = left
+                let deadline = Date().addingTimeInterval(600)
+                while left > 0 && Date() < deadline {
+                    say("Downloading pictures — \(left) left", Double(start - left) / Double(start))
+                    Thread.sleep(forTimeInterval: 2)
+                    left = CloudSync.materialise(blobs, deep: true)
+                }
+                // The merge skipped every thumb that was not here yet; now
+                // they are, so one more pass puts them on their tiles.
+                if start > 0 { _ = try? core.dispatch(action: "sync", argsJson: "{}") }
+            }
+            Task { @MainActor in
+                self?.progress = nil
+                self?.readSyncStatus()
             }
         }
     }

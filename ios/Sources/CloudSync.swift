@@ -20,8 +20,8 @@ enum CloudSync {
         for case let url as URL in items {
             let values = try? url.resourceValues(forKeys: Set(keys))
             if values?.isDirectory == true { continue }
-            let status = values?.ubiquitousItemDownloadingStatus
-            if status == .current { continue }
+            // No status = not an iCloud file at all, so nothing to wait for.
+            guard let status = values?.ubiquitousItemDownloadingStatus, status != .current else { continue }
             pending += 1
             try? fm.startDownloadingUbiquitousItem(at: url)
         }
@@ -29,11 +29,13 @@ enum CloudSync {
     }
 
     /// Materialise, then wait (briefly) for the files to land. Called on the
-    /// sync path, off the main thread.
-    static func pull(_ dir: URL, timeout: TimeInterval = 12) {
+    /// sync path, off the main thread; `left` hears how many are still coming.
+    static func pull(_ dir: URL, timeout: TimeInterval = 12, left: (Int) -> Void = { _ in }) {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if materialise(dir) == 0 { return }
+            let n = materialise(dir)
+            if n == 0 { return }
+            left(n)
             Thread.sleep(forTimeInterval: 0.5)
         }
     }
@@ -48,4 +50,13 @@ struct SyncStatus: Codable {
     var devices: Int = 0
     var imported: Int = 0
     var error: String?
+    var done: Int = 0
+    var total: Int = 0
+}
+
+/// What a sync is doing this moment — the bar. Nil when nothing is running.
+struct SyncProgress: Equatable {
+    var phase: String
+    /// nil while there is nothing to count yet.
+    var fraction: Double?
 }
