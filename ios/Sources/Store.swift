@@ -86,11 +86,15 @@ final class Store: ObservableObject {
     /// new lists to merge.
     @Published private(set) var merging = false
     private var fetchingPictures = false
+    /// A sync asked for while one was merging: the running merge may already
+    /// have passed the rows it would fill, so one more pass follows it.
+    private var again = false
 
     /// `pictures: false` is the pass after the download: it only collects
     /// what arrived, so a picture that never comes cannot loop the wait.
     func syncNow(pictures: Bool = true) {
-        guard let core, !merging else { return }
+        guard let core else { return }
+        guard !merging else { again = true; return }
         merging = true
         let dir = settings.syncDir.map { URL(fileURLWithPath: $0) }
         progress = SyncProgress(phase: "Checking iCloud…")
@@ -118,6 +122,7 @@ final class Store: ObservableObject {
                 self.progress = nil
                 self.readSyncStatus()
                 if pictures, let dir { self.fetchPictures(dir.appendingPathComponent("blobs")) }
+                if self.again { self.again = false; self.syncNow(pictures: false) }
             }
         }
     }
