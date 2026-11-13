@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Regenerate every membox icon asset from brand/icon-master.png.
 
-The master is raw generated art on a painted fake-transparency checkerboard.
+The master is the render of brand/icon.svg (full-bleed ink; older masters were
+generated art on a painted checkerboard, which the dark-artwork crop handles too).
 We find the dark artwork, crop it square, and cut our own Apple squircle so the
 geometry is exact instead of whatever the model drew.
 

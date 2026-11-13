@@ -1,13 +1,17 @@
 # membox brand
 
-`icon-master.png` is the source of truth. Everything under `generated/` comes from it:
+`icon.svg` is the source of truth (2026-11-13: the Bauhaus cube — yellow lid,
+blue and red sides, on ink; chosen over a squared-off masonry grid in an
+icon-lab round). `icon-master.png` is its 1024 render
+(`rsvg-convert -w 1024 -h 1024 icon.svg -o icon-master.png`), and everything
+under `generated/` comes from that:
 
 ```sh
 bin/icons                    # regenerate all sets from icon-master.png
 bin/icons path/to/other.png  # or from a different master
 ```
 
-The mark is a flat isometric cube, empty, no glow — flat geometry is what stays
+The mark is a flat isometric cube, one primary per face, no glow — flat geometry is what stays
 legible at 16 px. `bin/icons` finds the dark artwork in the master, crops it
 square, and cuts its own Apple superellipse (n=5), so the squircle geometry is
 ours rather than whatever the generator drew.
