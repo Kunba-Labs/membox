@@ -80,11 +80,18 @@ final class Store: ObservableObject {
     /// which is a mutex clone, returns to main.
     ///
     /// Each stage says what it is doing through `progress` — "is it syncing?"
-    /// used to have no answer on screen at all. One sync at a time: the
-    /// foreground hop and the first-run setup both ask, and two merges of the
-    /// same files only race each other.
-    func syncNow() {
-        guard let core, progress == nil else { return }
+    /// used to have no answer on screen at all. Two guards, not one: a second
+    /// merge of the same lists only races the first, but the picture download
+    /// can run for minutes and must not hold off a foreground sync that has
+    /// new lists to merge.
+    @Published private(set) var merging = false
+    private var fetchingPictures = false
+
+    /// `pictures: false` is the pass after the download: it only collects
+    /// what arrived, so a picture that never comes cannot loop the wait.
+    func syncNow(pictures: Bool = true) {
+        guard let core, !merging else { return }
+        merging = true
         let dir = settings.syncDir.map { URL(fileURLWithPath: $0) }
         progress = SyncProgress(phase: "Checking iCloud…")
         let say: @Sendable (String, Double?) -> Void = { phase, f in
@@ -93,7 +100,7 @@ final class Store: ObservableObject {
         // The merge counts its rows in the core; read them while it runs.
         let poll = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
             Task { @MainActor [weak self] in
-                guard let self, self.progress != nil else { return }
+                guard let self, self.merging else { return }
                 self.readSyncStatus()
                 let s = self.syncStatus
                 if s.total > 0 { self.progress = SyncProgress(phase: "Merging \(s.done) of \(s.total)", fraction: Double(s.done) / Double(s.total)) }
@@ -104,27 +111,45 @@ final class Store: ObservableObject {
                 CloudSync.pull(dir.appendingPathComponent("devices")) { say("Downloading the other devices' lists — \($0) left", nil) }
             }
             _ = try? core.dispatch(action: "sync", argsJson: "{}")
-            Task { @MainActor in poll.invalidate() }
-            // Pictures come after the rows, so the library is there to look at
-            // while they download. ponytail: re-walks blobs/ every 2s; fine for
-            // thousands of files, a metadata query if it gets to be millions.
-            if let dir {
-                let blobs = dir.appendingPathComponent("blobs")
-                var left = CloudSync.materialise(blobs, deep: true)
-                let start = left
-                let deadline = Date().addingTimeInterval(600)
-                while left > 0 && Date() < deadline {
-                    say("Downloading pictures — \(left) left", Double(start - left) / Double(start))
-                    Thread.sleep(forTimeInterval: 2)
-                    left = CloudSync.materialise(blobs, deep: true)
-                }
-                // The merge skipped every thumb that was not here yet; now
-                // they are, so one more pass puts them on their tiles.
-                if start > 0 { _ = try? core.dispatch(action: "sync", argsJson: "{}") }
-            }
             Task { @MainActor in
-                self?.progress = nil
-                self?.readSyncStatus()
+                poll.invalidate()
+                guard let self else { return }
+                self.merging = false
+                self.progress = nil
+                self.readSyncStatus()
+                if pictures, let dir { self.fetchPictures(dir.appendingPathComponent("blobs")) }
+            }
+        }
+    }
+
+    /// Pictures come after the rows, so the library is there to look at while
+    /// they download; then one more merge puts them on their tiles. Runs at
+    /// most once at a time, beside any number of list merges. Its bar only
+    /// shows while no merge is using it.
+    /// ponytail: re-walks blobs/ every 2s; fine for thousands of files, a
+    /// metadata query if it gets to be millions.
+    private func fetchPictures(_ blobs: URL) {
+        guard !fetchingPictures else { return }
+        fetchingPictures = true
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            var left = CloudSync.materialise(blobs, deep: true)
+            let start = left
+            let deadline = Date().addingTimeInterval(600)
+            while left > 0 && Date() < deadline {
+                let (n, f) = (left, Double(start - left) / Double(start))
+                Task { @MainActor [weak self] in
+                    guard let self, !self.merging else { return }
+                    self.progress = SyncProgress(phase: "Downloading pictures — \(n) left", fraction: f)
+                }
+                Thread.sleep(forTimeInterval: 2)
+                left = CloudSync.materialise(blobs, deep: true)
+            }
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.fetchingPictures = false
+                if !self.merging { self.progress = nil }
+                // The merge skipped every thumb that was not here yet.
+                if start > 0 { self.syncNow(pictures: false) }
             }
         }
     }

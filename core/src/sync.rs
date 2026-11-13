@@ -120,7 +120,6 @@ impl Library {
         let mut st = self.sync_status.lock();
         st.dir = Some(dir.display().to_string());
         st.last_export = Some(file.exported_at);
-        st.error = None;
         Ok(())
     }
 
@@ -143,7 +142,11 @@ impl Library {
             .filter_map(|p| serde_json::from_slice::<DeviceFile>(&std::fs::read(&p).ok()?).ok())
             .collect();
         {
+            // A new merge, a clean slate: what this one skips is the problem
+            // now. The export after it leaves the field alone, or the Sync
+            // sheet would never get to say a row was skipped.
             let mut st = self.sync_status.lock();
+            st.error = None;
             st.done = 0;
             st.total = files.iter().map(|f| f.items.len()).sum();
         }

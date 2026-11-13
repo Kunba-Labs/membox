@@ -173,7 +173,7 @@ struct SyncSheet: View {
                 }
                 Section {
                     Button("Sync now") { store.syncNow() }
-                        .disabled(store.progress != nil)
+                        .disabled(store.merging)
                 }
             }
             .navigationTitle("Sync")
