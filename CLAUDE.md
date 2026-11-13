@@ -82,6 +82,8 @@ Data: `~/Library/Application Support/com.membox.desktop[.dev]/` — `membox.db`,
   suggestions in its prompt, so it reuses "Want to buy" instead of inventing
   "Shopping" beside it.
 - **Sync never moves the SQLite file.** Per-device `devices/<id>.json` snapshots in iCloud Drive, LWW on `updated_at`, tombstones in `deleted_at`. Seed folder ids are deterministic (`f-seed-…`) so trees merge.
+  Page shots travel as a 1200px JPEG (`blobs/shots/`, `sips` on export); the
+  receiving device keeps it under the original rel, so the row never differs.
 - **Two identities** like inbox2: `membox` (daily) and `membox Dev` (play) — separate libraries, MCP endpoints, iCloud folders (`membox` / `membox-dev`).
 - **Two looks, one token file** (`settings.theme`, synced): **Bauhaus** is the
   default and **Glass** is the original design, kept. The difference is shape

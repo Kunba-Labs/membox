@@ -8,7 +8,11 @@
 //! last-writer-wins per row on `updated_at`.
 //!
 //! Thumbs are copied into `blobs/` content-addressed (a tile without its
-//! thumb is blank); full-page shots and scratch dirs stay local.
+//! thumb is blank). Full-page shots go to `blobs/shots/` under the same name,
+//! shrunk to a 1200px-wide JPEG on the way out (an 18MB 2560×16000 PNG is
+//! ~1.2MB): enough for a phone or the iPad's pan, a fifteenth of the iCloud.
+//! The other device keeps the small copy under the original rel. Scratch
+//! dirs stay local.
 //!
 //! ponytail: each export rewrites the whole snapshot. Fine for thousands of
 //! rows; switch to an append-only op log when a library makes the file slow.
@@ -112,6 +116,20 @@ impl Library {
                 let _ = std::fs::copy(self.blob_path(rel), &dst);
             }
         }
+        let shots = blobs.join("shots");
+        for rel in items.iter().filter_map(|i| i.page_shot.as_deref()) {
+            let (src, dst) = (self.blob_path(rel), shots.join(rel));
+            if !dst.exists() && src.exists() {
+                if let Some(parent) = dst.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                // Written aside and renamed, so iCloud never ships half a picture.
+                let tmp = dst.with_extension("part");
+                if shrink(&src, &tmp) || std::fs::copy(&src, &tmp).is_ok() {
+                    let _ = std::fs::rename(&tmp, &dst);
+                }
+            }
+        }
         let file = DeviceFile { device: self.device_id(), exported_at: crate::model::now(), items, folders };
         let path = devices.join(format!("{}.json", file.device));
         let tmp = devices.join(format!("{}.json.tmp", file.device));
@@ -205,14 +223,12 @@ impl Library {
             // good: the row then carried the exporter's own `updated_at`, and
             // the test below is a strict `<`, so it was never looked at again.
             let thumb = it.thumb.as_deref().filter(|rel| self.pull_blob(rel, blobs)).map(str::to_string);
+            let shot = it.page_shot.as_deref().filter(|rel| self.pull_blob(rel, &blobs.join("shots"))).map(str::to_string);
             let stale = local.as_ref().map(|l| l.updated_at < it.updated_at).unwrap_or(true);
             if stale {
-                // Bring the thumb along; page shots stay on the device that made them.
                 let mut row = it.clone();
                 row.thumb = thumb;
-                if row.page_shot.as_ref().map(|p| !self.blob_path(p).exists()).unwrap_or(false) {
-                    row.page_shot = None;
-                }
+                row.page_shot = shot;
                 let waiting = !row.trashed && matches!(row.status.as_str(), "pending" | "fetching" | "enriching" | "queued");
                 self.db.lock().upsert_item_for_sync(&row).map_err(|e| e.to_string())?;
                 // Something another device could not finish — the phone has no
@@ -224,11 +240,19 @@ impl Library {
                     self.queue_fetch(&row.id);
                 }
                 return Ok(true);
-            } else if let Some(mut row) = local.filter(|l| l.thumb.is_none() && thumb.is_some()) {
-                // The row is ours or a tie — only the picture was missing, so
+            } else if let Some(mut row) = local.filter(|l| {
+                (l.thumb.is_none() && thumb.is_some())
+                    // Only the same version: a newer row here may have dropped
+                    // its pan on purpose (the page became one screen).
+                    || (l.page_shot.is_none() && shot.is_some() && l.updated_at == it.updated_at)
+            }) {
+                // The row is ours or a tie — only a picture was missing, so
                 // fill that in and leave every other column alone. Overwriting
                 // with `it` here would undo a newer edit made on this device.
-                row.thumb = thumb;
+                row.thumb = row.thumb.or(thumb);
+                if row.updated_at == it.updated_at {
+                    row.page_shot = row.page_shot.or(shot);
+                }
                 self.db.lock().upsert_item_for_sync(&row).map_err(|e| e.to_string())?;
                 return Ok(true);
             }
@@ -251,6 +275,20 @@ impl Library {
         }
         std::fs::copy(&src, &dst).is_ok()
     }
+}
+
+/// The page shot as the other devices get it. macOS only — the one place a
+/// page shot is taken; anywhere else (or if sips fails) the caller copies.
+fn shrink(src: &Path, dst: &Path) -> bool {
+    cfg!(target_os = "macos")
+        && std::process::Command::new("/usr/bin/sips")
+            .args(["-s", "format", "jpeg", "-s", "formatOptions", "70", "--resampleWidth", "1200"])
+            .arg(src)
+            .arg("--out")
+            .arg(dst)
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
 }
 
 /// A file iCloud has listed but not downloaded. Copying one blocks until the
@@ -428,5 +466,33 @@ mod tests {
             Some(rel),
             "the thumb must come back once iCloud materialises it"
         );
+    }
+
+    /// The pan travels: the phone and the iPad get the page shot (as the
+    /// shrunk copy under `blobs/shots/`), and a shot that lands after the row
+    /// is filled in on a later pass like a late thumb.
+    #[test]
+    fn a_page_shot_reaches_the_other_device() {
+        let shared = tempfile::tempdir().unwrap();
+        let a = lib(shared.path());
+        let b = lib(shared.path());
+        let id = a.capture(CaptureInput { text: "a note".into(), ..Default::default() }).unwrap();
+        let rel = a.put_blob(b"not really a png", "png").unwrap();
+        let mut row = a.db.lock().get_item_for_sync(&id).unwrap().unwrap();
+        row.page_shot = Some(rel.clone());
+        a.db.lock().upsert_item_for_sync(&row).unwrap();
+
+        a.sync_export().unwrap();
+        let shared_shot = shared.path().join("blobs/shots").join(&rel);
+        assert!(shared_shot.exists(), "export publishes the shot");
+        let bytes = std::fs::read(&shared_shot).unwrap();
+        std::fs::remove_file(&shared_shot).unwrap();
+        b.sync_import().unwrap();
+        assert_eq!(b.db.lock().get_item(&id).unwrap().unwrap().page_shot, None, "not downloaded yet");
+
+        std::fs::write(&shared_shot, bytes).unwrap();
+        b.sync_import().unwrap();
+        assert_eq!(b.db.lock().get_item(&id).unwrap().unwrap().page_shot, Some(rel.clone()));
+        assert!(b.blob_path(&rel).exists());
     }
 }
